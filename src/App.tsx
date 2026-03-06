@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Transactions from "./pages/Transactions";
 import History from "./pages/History";
+import Settings from "./pages/Settings";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/students" element={<Students />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/history" element={<History />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
