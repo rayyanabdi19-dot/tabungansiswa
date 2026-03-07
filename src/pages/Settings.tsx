@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,28 +6,65 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { School, Save, Upload } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const { toast } = useToast();
   const [schoolData, setSchoolData] = useState({
-    name: "SD Negeri 1 Sukamaju",
-    npsn: "20123456",
-    address: "Jl. Pendidikan No. 1, Sukamaju",
-    city: "Jakarta",
-    province: "DKI Jakarta",
-    phone: "021-12345678",
-    email: "info@sdn1sukamaju.sch.id",
-    principal: "Drs. Ahmad Suryadi, M.Pd",
-    logo: "",
+    id: "",
+    name: "",
+    npsn: "",
+    address: "",
+    city: "",
+    province: "",
+    phone: "",
+    email: "",
+    principal: "",
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from("school_settings").select("*").limit(1).single();
+      if (data) {
+        setSchoolData({
+          id: data.id,
+          name: data.name || "",
+          npsn: data.npsn || "",
+          address: data.address || "",
+          city: data.city || "",
+          province: data.province || "",
+          phone: data.phone || "",
+          email: data.email || "",
+          principal: data.principal || "",
+        });
+      }
+    };
+    load();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profil Sekolah Disimpan ✅",
-      description: "Data profil sekolah berhasil diperbarui.",
-    });
+    const payload = {
+      name: schoolData.name,
+      npsn: schoolData.npsn,
+      address: schoolData.address,
+      city: schoolData.city,
+      province: schoolData.province,
+      phone: schoolData.phone,
+      email: schoolData.email,
+      principal: schoolData.principal,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (schoolData.id) {
+      await supabase.from("school_settings").update(payload).eq("id", schoolData.id);
+    } else {
+      const { data } = await supabase.from("school_settings").insert(payload).select().single();
+      if (data) setSchoolData(prev => ({ ...prev, id: data.id }));
+    }
+
+    toast({ title: "Profil Sekolah Disimpan ✅" });
   };
 
   const handleChange = (field: string, value: string) => {
@@ -37,9 +74,9 @@ const Settings = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in max-w-3xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold">Pengaturan</h1>
-          <p className="text-muted-foreground">Profil sekolah dan konfigurasi aplikasi</p>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-xl md:text-2xl font-bold">Pengaturan</h1>
+          <p className="text-muted-foreground text-sm">Profil sekolah dan konfigurasi aplikasi</p>
         </div>
 
         <Card className="glass-card">
@@ -52,16 +89,12 @@ const Settings = () => {
           <CardContent>
             <form onSubmit={handleSave} className="space-y-5">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 border border-border/50">
-                <div className="w-20 h-20 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <School className="w-10 h-10 text-primary" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <School className="w-8 h-8 md:w-10 md:h-10 text-primary" />
                 </div>
-                <div>
-                  <p className="font-semibold">{schoolData.name}</p>
-                  <p className="text-sm text-muted-foreground">NPSN: {schoolData.npsn}</p>
-                  <Button type="button" variant="outline" size="sm" className="mt-2 gap-1">
-                    <Upload className="w-3 h-3" />
-                    Upload Logo
-                  </Button>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{schoolData.name || "Nama Sekolah"}</p>
+                  <p className="text-sm text-muted-foreground">NPSN: {schoolData.npsn || "-"}</p>
                 </div>
               </div>
 
