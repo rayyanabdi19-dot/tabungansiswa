@@ -1,19 +1,127 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PiggyBank, Eye, EyeOff } from "lucide-react";
+import { PiggyBank, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user, role } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'admin' | 'parent'>('admin');
+  const [loginRole, setLoginRole] = useState<"admin" | "parent">("admin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nis, setNis] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
+  const [fullName, setFullName] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user && role) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, role, navigate]);
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    setLoading(true);
+
+    if (isSignup) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName, role: "admin" },
+        },
+      });
+      if (error) {
+        toast({ title: "Gagal Daftar", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Berhasil Daftar ✅", description: "Silakan login." });
+        setIsSignup(false);
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({ title: "Login Gagal", description: error.message, variant: "destructive" });
+      } else {
+        navigate("/dashboard");
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleParentLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Parent login with NIS: lookup student, then sign in with NIS-based email
+    const parentEmail = `parent-${nis}@tabunganku.app`;
+    const parentPassword = `nis-${nis}-parent`;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: parentEmail,
+      password: parentPassword,
+    });
+
+    if (error) {
+      // Auto-register parent if not exists
+      const { data: student } = await supabase
+        .from("students")
+        .select("id, name, parent_name")
+        .eq("nis", nis)
+        .single();
+
+      if (!student) {
+        toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: parentEmail,
+        password: parentPassword,
+        options: {
+          data: { full_name: student.parent_name || `Orang Tua ${student.name}`, role: "parent" },
+        },
+      });
+
+      if (signUpError) {
+        toast({ title: "Login Gagal", description: signUpError.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Link parent to student
+      if (signUpData.user) {
+        await supabase
+          .from("students")
+          .update({ parent_user_id: signUpData.user.id })
+          .eq("nis", nis);
+      }
+
+      // Try login again
+      const { error: loginErr } = await supabase.auth.signInWithPassword({
+        email: parentEmail,
+        password: parentPassword,
+      });
+
+      if (loginErr) {
+        toast({ title: "Login Gagal", description: loginErr.message, variant: "destructive" });
+      } else {
+        navigate("/dashboard");
+      }
+    } else {
+      navigate("/dashboard");
+    }
+    setLoading(false);
   };
 
   return (
@@ -32,52 +140,100 @@ const Login = () => {
             <div className="flex gap-2 mb-6">
               <Button
                 type="button"
-                variant={role === 'admin' ? 'default' : 'outline'}
+                variant={loginRole === "admin" ? "default" : "outline"}
                 className="flex-1"
-                onClick={() => setRole('admin')}
+                onClick={() => { setLoginRole("admin"); setIsSignup(false); }}
               >
                 Admin / Petugas
               </Button>
               <Button
                 type="button"
-                variant={role === 'parent' ? 'default' : 'outline'}
+                variant={loginRole === "parent" ? "default" : "outline"}
                 className="flex-1"
-                onClick={() => setRole('parent')}
+                onClick={() => { setLoginRole("parent"); setIsSignup(false); }}
               >
                 Orang Tua
               </Button>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  {role === 'admin' ? 'Username / Email' : 'No. HP / Email'}
-                </Label>
-                <Input id="email" placeholder={role === 'admin' ? 'admin@sekolah.id' : '081234567890'} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
+            {loginRole === "admin" ? (
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                {isSignup && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nama Lengkap</Label>
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Nama lengkap"
+                      required
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@sekolah.id"
+                    required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
-
-              <Button type="submit" className="w-full" size="lg">
-                Masuk
-              </Button>
-            </form>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isSignup ? "Daftar" : "Masuk"}
+                </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  {isSignup ? "Sudah punya akun?" : "Belum punya akun?"}{" "}
+                  <button type="button" onClick={() => setIsSignup(!isSignup)} className="text-primary font-medium hover:underline">
+                    {isSignup ? "Masuk" : "Daftar"}
+                  </button>
+                </p>
+              </form>
+            ) : (
+              <form onSubmit={handleParentLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nis">NIS Siswa</Label>
+                  <Input
+                    id="nis"
+                    value={nis}
+                    onChange={(e) => setNis(e.target.value)}
+                    placeholder="Masukkan NIS siswa"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Masuk menggunakan NIS siswa. Akun akan otomatis dibuat jika NIS terdaftar.
+                </p>
+                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Masuk sebagai Orang Tua
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
 
