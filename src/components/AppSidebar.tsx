@@ -10,6 +10,7 @@ const adminMenu = [
   { icon: ArrowUpDown, label: "Transaksi", path: "/transactions" },
   { icon: CreditCard, label: "Pinjaman", path: "/loans" },
   { icon: History, label: "Riwayat", path: "/history" },
+  { icon: FileBarChart, label: "Laporan", path: "/reports" },
 ];
 
 const parentMenu = [
