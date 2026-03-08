@@ -74,6 +74,39 @@ const Dashboard = () => {
         .order("created_at", { ascending: false })
         .limit(5);
       setRecentTx(txs || []);
+
+      // Monthly chart data (last 6 months)
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      const { data: monthlyTxs } = await supabase
+        .from("transactions")
+        .select("type, amount, created_at")
+        .gte("created_at", sixMonthsAgo.toISOString());
+
+      const months: Record<string, { setoran: number; penarikan: number }> = {};
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+      for (let i = 0; i < 6; i++) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (5 - i));
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        months[key] = { setoran: 0, penarikan: 0 };
+      }
+      (monthlyTxs || []).forEach((tx) => {
+        const d = new Date(tx.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (months[key]) {
+          if (tx.type === "setoran") months[key].setoran += Number(tx.amount);
+          else months[key].penarikan += Number(tx.amount);
+        }
+      });
+      setMonthlyData(
+        Object.entries(months).map(([key, val]) => ({
+          name: monthNames[parseInt(key.split("-")[1]) - 1],
+          Setoran: val.setoran,
+          Penarikan: val.penarikan,
+        }))
+      );
     };
     load();
   }, []);
