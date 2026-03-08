@@ -170,6 +170,36 @@ const Dashboard = () => {
           ))}
         </div>
 
+        {/* Monthly Chart */}
+        <Card className="glass-card mb-6 md:mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg">Statistik Tabungan Per Bulan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip
+                    formatter={(value: number) => formatRupiah(value)}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '0.5rem',
+                      color: 'hsl(var(--foreground))',
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="Setoran" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Penarikan" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="text-lg">Transaksi Terbaru</CardTitle>
