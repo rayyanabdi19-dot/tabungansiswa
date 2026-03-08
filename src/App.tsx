@@ -12,6 +12,7 @@ import Students from "./pages/Students";
 import Transactions from "./pages/Transactions";
 import History from "./pages/History";
 import Loans from "./pages/Loans";
+import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
