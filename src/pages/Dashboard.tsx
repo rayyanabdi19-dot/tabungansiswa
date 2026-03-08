@@ -36,7 +36,7 @@ const Dashboard = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [stats, setStats] = useState({ totalBalance: 0, totalStudents: 0, todayDeposit: 0, todayWithdraw: 0 });
   const [recentTx, setRecentTx] = useState<any[]>([]);
-
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
   }, []);
