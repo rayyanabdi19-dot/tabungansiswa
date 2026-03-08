@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Wallet, Users, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,7 +36,7 @@ const Dashboard = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [stats, setStats] = useState({ totalBalance: 0, totalStudents: 0, todayDeposit: 0, todayWithdraw: 0 });
   const [recentTx, setRecentTx] = useState<any[]>([]);
-
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
   }, []);
@@ -73,6 +74,39 @@ const Dashboard = () => {
         .order("created_at", { ascending: false })
         .limit(5);
       setRecentTx(txs || []);
+
+      // Monthly chart data (last 6 months)
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      const { data: monthlyTxs } = await supabase
+        .from("transactions")
+        .select("type, amount, created_at")
+        .gte("created_at", sixMonthsAgo.toISOString());
+
+      const months: Record<string, { setoran: number; penarikan: number }> = {};
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+      for (let i = 0; i < 6; i++) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (5 - i));
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        months[key] = { setoran: 0, penarikan: 0 };
+      }
+      (monthlyTxs || []).forEach((tx) => {
+        const d = new Date(tx.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (months[key]) {
+          if (tx.type === "setoran") months[key].setoran += Number(tx.amount);
+          else months[key].penarikan += Number(tx.amount);
+        }
+      });
+      setMonthlyData(
+        Object.entries(months).map(([key, val]) => ({
+          name: monthNames[parseInt(key.split("-")[1]) - 1],
+          Setoran: val.setoran,
+          Penarikan: val.penarikan,
+        }))
+      );
     };
     load();
   }, []);
@@ -135,6 +169,36 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* Monthly Chart */}
+        <Card className="glass-card mb-6 md:mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg">Statistik Tabungan Per Bulan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip
+                    formatter={(value: number) => formatRupiah(value)}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '0.5rem',
+                      color: 'hsl(var(--foreground))',
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="Setoran" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Penarikan" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="glass-card">
           <CardHeader>
