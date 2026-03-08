@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, ArrowUpDown, History, LogOut, PiggyBank, Settings, Info, ChevronDown, CreditCard, X } from "lucide-react";
+import { LayoutDashboard, Users, ArrowUpDown, History, LogOut, PiggyBank, Settings, Info, ChevronDown, CreditCard, X, FileBarChart } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -10,6 +10,7 @@ const adminMenu = [
   { icon: ArrowUpDown, label: "Transaksi", path: "/transactions" },
   { icon: CreditCard, label: "Pinjaman", path: "/loans" },
   { icon: History, label: "Riwayat", path: "/history" },
+  { icon: FileBarChart, label: "Laporan", path: "/reports" },
 ];
 
 const parentMenu = [
