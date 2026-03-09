@@ -141,6 +141,24 @@ const Settings = () => {
             </form>
           </CardContent>
         </Card>
+
+        <Card className="glass-card mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+              Tampilan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Mode Gelap</p>
+                <p className="text-sm text-muted-foreground">Aktifkan tampilan gelap untuk kenyamanan mata</p>
+              </div>
+              <Switch checked={isDark} onCheckedChange={toggleDarkMode} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
