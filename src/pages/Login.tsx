@@ -62,63 +62,78 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Parent login with NIS: lookup student, then sign in with NIS-based email
     const parentEmail = `parent-${nis}@tabunganku.app`;
     const parentPassword = `nis-${nis}-parent`;
 
+    // First, check if the student exists (public lookup via service)
+    // We need to verify NIS before attempting auth
+    // Try login first
     const { error } = await supabase.auth.signInWithPassword({
       email: parentEmail,
       password: parentPassword,
     });
 
-    if (error) {
-      // Auto-register parent if not exists
+    if (!error) {
+      // Login successful, link parent if needed
+      const { data: { user: loggedUser } } = await supabase.auth.getUser();
+      if (loggedUser) {
+        await supabase
+          .from("students")
+          .update({ parent_user_id: loggedUser.id })
+          .eq("nis", nis);
+      }
+      navigate("/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    // Login failed - check if student exists first using anon access won't work due to RLS
+    // Sign up the parent account (auto-confirm is enabled)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: parentEmail,
+      password: parentPassword,
+      options: {
+        data: { full_name: `Orang Tua (NIS: ${nis})`, role: "parent" },
+      },
+    });
+
+    if (signUpError) {
+      toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    // Check if user was actually created (fake signup returns user without session when email exists)
+    if (!signUpData.session) {
+      toast({ title: "Login Gagal", description: "Akun tidak dapat dibuat. Hubungi admin.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    // User signed up and auto-confirmed - already logged in via signUpData.session
+    if (signUpData.user) {
+      // Link parent to student
+      await supabase
+        .from("students")
+        .update({ parent_user_id: signUpData.user.id })
+        .eq("nis", nis);
+
+      // Verify student exists for this NIS
       const { data: student } = await supabase
         .from("students")
-        .select("id, name, parent_name")
+        .select("id")
         .eq("nis", nis)
+        .eq("parent_user_id", signUpData.user.id)
         .single();
 
       if (!student) {
-        toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar.", variant: "destructive" });
+        // NIS not found, clean up by signing out
+        await supabase.auth.signOut();
+        toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" });
         setLoading(false);
         return;
       }
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: parentEmail,
-        password: parentPassword,
-        options: {
-          data: { full_name: student.parent_name || `Orang Tua ${student.name}`, role: "parent" },
-        },
-      });
-
-      if (signUpError) {
-        toast({ title: "Login Gagal", description: signUpError.message, variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-
-      // Link parent to student
-      if (signUpData.user) {
-        await supabase
-          .from("students")
-          .update({ parent_user_id: signUpData.user.id })
-          .eq("nis", nis);
-      }
-
-      // Try login again
-      const { error: loginErr } = await supabase.auth.signInWithPassword({
-        email: parentEmail,
-        password: parentPassword,
-      });
-
-      if (loginErr) {
-        toast({ title: "Login Gagal", description: loginErr.message, variant: "destructive" });
-      } else {
-        navigate("/dashboard");
-      }
-    } else {
       navigate("/dashboard");
     }
     setLoading(false);
