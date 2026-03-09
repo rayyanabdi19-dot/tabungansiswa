@@ -12,6 +12,21 @@ import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const { toast } = useToast();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDark(checked);
+    document.documentElement.classList.toggle("dark", checked);
+    localStorage.setItem("theme", checked ? "dark" : "light");
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    }
+  }, []);
   const [schoolData, setSchoolData] = useState({
     id: "",
     name: "",
