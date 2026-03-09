@@ -4,13 +4,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { School, Save, Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { School, Save, Moon, Sun } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const { toast } = useToast();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDark(checked);
+    document.documentElement.classList.toggle("dark", checked);
+    localStorage.setItem("theme", checked ? "dark" : "light");
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    }
+  }, []);
   const [schoolData, setSchoolData] = useState({
     id: "",
     name: "",
@@ -138,6 +154,24 @@ const Settings = () => {
                 Simpan Profil
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+              Tampilan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Mode Gelap</p>
+                <p className="text-sm text-muted-foreground">Aktifkan tampilan gelap untuk kenyamanan mata</p>
+              </div>
+              <Switch checked={isDark} onCheckedChange={toggleDarkMode} />
+            </div>
           </CardContent>
         </Card>
       </div>
