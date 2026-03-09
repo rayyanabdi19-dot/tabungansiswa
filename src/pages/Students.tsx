@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Search, Plus, Phone, Pencil, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Plus, Phone, Pencil, Trash2, Upload, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatRupiah } from "@/lib/utils";
+import * as XLSX from "xlsx";
 
 const emptyForm = { name: "", nis: "", class: "", parentName: "", parentPhone: "" };
 
@@ -22,6 +23,8 @@ const Students = () => {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchStudents = async () => {
     const { data } = await supabase.from("students").select("*").order("name");
@@ -94,6 +97,63 @@ const Students = () => {
     setDeleteId(null);
   };
 
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+
+      if (rows.length === 0) {
+        toast({ title: "File Kosong", description: "File Excel tidak berisi data.", variant: "destructive" });
+        setImporting(false);
+        return;
+      }
+
+      // Map common column names
+      const mapped = rows.map((row) => ({
+        name: row["Nama"] || row["nama"] || row["Name"] || row["name"] || "",
+        nis: String(row["NIS"] || row["nis"] || row["Nis"] || ""),
+        class: String(row["Kelas"] || row["kelas"] || row["Class"] || row["class"] || ""),
+        parent_name: row["Nama Orang Tua"] || row["Orang Tua"] || row["parent_name"] || "",
+        parent_phone: String(row["No HP"] || row["HP"] || row["Phone"] || row["parent_phone"] || row["No. HP Orang Tua"] || ""),
+      })).filter((r) => r.name && r.nis);
+
+      if (mapped.length === 0) {
+        toast({ title: "Format Salah", description: "Pastikan kolom: Nama, NIS, Kelas tersedia.", variant: "destructive" });
+        setImporting(false);
+        return;
+      }
+
+      const { error } = await supabase.from("students").insert(mapped);
+      if (error) {
+        toast({ title: "Gagal Import", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: `${mapped.length} Siswa Berhasil Diimport ✅` });
+        fetchStudents();
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Gagal membaca file.", variant: "destructive" });
+    }
+
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Nama", "NIS", "Kelas", "Nama Orang Tua", "No HP"],
+      ["Contoh Siswa", "20240001", "6A", "Nama Orang Tua", "081234567890"],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Siswa");
+    XLSX.writeFile(wb, "Template_Import_Siswa.xlsx");
+  };
+
   const getInitials = (name: string) => name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
@@ -104,44 +164,55 @@ const Students = () => {
             <h1 className="text-xl md:text-2xl font-bold">Data Siswa</h1>
             <p className="text-muted-foreground text-sm">{students.length} siswa terdaftar</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setForm(emptyForm); setEditingId(null); } }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Tambah Siswa
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Siswa" : "Tambah Siswa Baru"}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                <div className="space-y-2">
-                  <Label>Nama Lengkap</Label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama siswa" required />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={downloadTemplate}>
+              <FileSpreadsheet className="w-4 h-4" />
+              <span className="hidden sm:inline">Template</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">{importing ? "Mengimport..." : "Import Excel"}</span>
+            </Button>
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportExcel} />
+            <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setForm(emptyForm); setEditingId(null); } }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Tambah
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingId ? "Edit Siswa" : "Tambah Siswa Baru"}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                   <div className="space-y-2">
-                    <Label>NIS</Label>
-                    <Input value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} placeholder="2024007" required />
+                    <Label>Nama Lengkap</Label>
+                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama siswa" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>NIS</Label>
+                      <Input value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} placeholder="2024007" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Kelas</Label>
+                      <Input value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} placeholder="6A" required />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Kelas</Label>
-                    <Input value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} placeholder="6A" required />
+                    <Label>Nama Orang Tua</Label>
+                    <Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} placeholder="Nama orang tua" />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Nama Orang Tua</Label>
-                  <Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} placeholder="Nama orang tua" />
-                </div>
-                <div className="space-y-2">
-                  <Label>No. HP Orang Tua</Label>
-                  <Input value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="081234567890" />
-                </div>
-                <Button type="submit" className="w-full">{editingId ? "Perbarui" : "Simpan"}</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <div className="space-y-2">
+                    <Label>No. HP Orang Tua</Label>
+                    <Input value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="081234567890" />
+                  </div>
+                  <Button type="submit" className="w-full">{editingId ? "Perbarui" : "Simpan"}</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="relative mb-6">

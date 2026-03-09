@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Printer } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,67 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatRupiah } from "@/lib/utils";
+import jsPDF from "jspdf";
+
+const printReceipt = (studentData: any, txType: string, amt: number, newBalance: number, note: string) => {
+  const doc = new jsPDF({ unit: "mm", format: [80, 150] });
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const txLabel = txType === "setoran" ? "SETORAN" : "PENARIKAN";
+
+  let y = 10;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("TabunganKu", 40, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("Sistem Tabungan Siswa", 40, y, { align: "center" });
+  y += 3;
+  doc.text("— Mickro Data 2R —", 40, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(8);
+  doc.text("--------------------------------", 40, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text(`BUKTI ${txLabel}`, 40, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("--------------------------------", 40, y, { align: "center" });
+  y += 5;
+
+  const lines = [
+    ["Tanggal", `${dateStr}`],
+    ["Waktu", timeStr],
+    ["Nama", studentData.name],
+    ["NIS", studentData.nis],
+    ["Kelas", studentData.class],
+    ["Jenis", txLabel],
+    ["Jumlah", formatRupiah(amt)],
+    ["Saldo Akhir", formatRupiah(newBalance)],
+  ];
+  if (note) lines.push(["Catatan", note]);
+
+  lines.forEach(([label, val]) => {
+    doc.setFont("helvetica", "normal");
+    doc.text(`${label}`, 5, y);
+    doc.text(`: ${val}`, 28, y);
+    y += 5;
+  });
+
+  y += 2;
+  doc.text("--------------------------------", 40, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(7);
+  doc.text("Terima kasih", 40, y, { align: "center" });
+  y += 4;
+  doc.text("Simpan bukti ini sebagai tanda terima", 40, y, { align: "center" });
+
+  doc.save(`Bukti_${txLabel}_${studentData.nis}_${now.getTime()}.pdf`);
+};
 
 const Transactions = () => {
   const { user } = useAuth();
@@ -32,7 +93,6 @@ const Transactions = () => {
     const phone = studentData.parent_phone;
     if (!phone) return;
 
-    // Format phone number for WhatsApp (remove leading 0, add 62)
     let waNumber = phone.replace(/\D/g, "");
     if (waNumber.startsWith("0")) waNumber = "62" + waNumber.slice(1);
     if (!waNumber.startsWith("62")) waNumber = "62" + waNumber;
@@ -50,7 +110,6 @@ const Transactions = () => {
       `_Pesan otomatis dari TabunganKu_`
     );
 
-    // Open WhatsApp with pre-filled message
     window.open(`https://wa.me/${waNumber}?text=${message}`, "_blank");
   };
 
@@ -90,10 +149,13 @@ const Transactions = () => {
       description: `${formatRupiah(amt)} untuk ${student.name}`,
     });
 
+    // Print receipt
+    printReceipt(student, type, amt, newBalance, note);
+
     // Send WhatsApp notification
     await sendWhatsAppNotification(student, type, amt, newBalance);
 
-    // Refresh student balance
+    // Refresh
     const { data: refreshed } = await supabase.from("students").select("*").order("name");
     setStudents(refreshed || []);
     setSelectedStudent("");
@@ -156,8 +218,9 @@ const Transactions = () => {
                 <Textarea placeholder="Setoran mingguan..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={!selectedStudent || !amount || sending}>
-                {type === "setoran" ? "Simpan Setoran" : "Proses Penarikan"}
+              <Button type="submit" className="w-full gap-2" size="lg" disabled={!selectedStudent || !amount || sending}>
+                <Printer className="w-4 h-4" />
+                {type === "setoran" ? "Simpan & Cetak Bukti" : "Proses & Cetak Bukti"}
               </Button>
             </form>
           </CardContent>
