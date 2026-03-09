@@ -252,9 +252,10 @@ const Login = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          © 2026 TabunganKu — Sistem Tabungan Siswa
-        </p>
+        <div className="text-center mt-6">
+          <p className="text-xs text-muted-foreground">© 2026 TabunganKu — Sistem Tabungan Siswa</p>
+          <p className="text-xs text-muted-foreground mt-1">— Mickro Data 2R —</p>
+        </div>
       </div>
     </div>
   );
