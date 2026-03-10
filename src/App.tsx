@@ -15,6 +15,7 @@ import Loans from "./pages/Loans";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import About from "./pages/About";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import RoleSwitcher from "./components/RoleSwitcher";
 
