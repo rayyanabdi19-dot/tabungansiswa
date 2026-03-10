@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ArrowUpRight, ArrowDownRight, Printer } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ArrowUpRight, ArrowDownRight, Printer, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -84,10 +84,17 @@ const Transactions = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
   const [sendWA, setSendWA] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     supabase.from("students").select("*").order("name").then(({ data }) => setStudents(data || []));
   }, []);
+
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery) return students;
+    const q = searchQuery.toLowerCase();
+    return students.filter(s => s.name.toLowerCase().includes(q) || s.nis.includes(q) || s.class.toLowerCase().includes(q));
+  }, [students, searchQuery]);
 
   const student = students.find((s) => s.id === selectedStudent);
 
@@ -192,12 +199,19 @@ const Transactions = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label>Pilih Siswa</Label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input placeholder="Cari nama, NIS, atau kelas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-10" />
+                </div>
                 <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                   <SelectTrigger><SelectValue placeholder="Pilih siswa..." /></SelectTrigger>
                   <SelectContent>
-                    {students.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name} — {s.class}</SelectItem>
+                    {filteredStudents.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} — {s.class} (NIS: {s.nis})</SelectItem>
                     ))}
+                    {filteredStudents.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">Siswa tidak ditemukan</div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
