@@ -15,6 +15,7 @@ import Loans from "./pages/Loans";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import About from "./pages/About";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import RoleSwitcher from "./components/RoleSwitcher";
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/history" element={<ProtectedRoute allowedRoles={["admin"]}><History /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute allowedRoles={["admin"]}><Settings /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute allowedRoles={["admin"]}><Profile /></ProtectedRoute>} />
             <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,6 +83,7 @@ const Transactions = () => {
   const [note, setNote] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
+  const [sendWA, setSendWA] = useState(true);
 
   useEffect(() => {
     supabase.from("students").select("*").order("name").then(({ data }) => setStudents(data || []));
@@ -153,7 +155,9 @@ const Transactions = () => {
     printReceipt(student, type, amt, newBalance, note);
 
     // Send WhatsApp notification
-    await sendWhatsAppNotification(student, type, amt, newBalance);
+    if (sendWA && student.parent_phone) {
+      await sendWhatsAppNotification(student, type, amt, newBalance);
+    }
 
     // Refresh
     const { data: refreshed } = await supabase.from("students").select("*").order("name");
@@ -217,6 +221,19 @@ const Transactions = () => {
                 <Label>Catatan</Label>
                 <Textarea placeholder="Setoran mingguan..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
               </div>
+
+              {student?.parent_phone && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📱</span>
+                    <div>
+                      <p className="text-sm font-medium">Kirim Notifikasi WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">Ke {student.parent_phone}</p>
+                    </div>
+                  </div>
+                  <Switch checked={sendWA} onCheckedChange={setSendWA} />
+                </div>
+              )}
 
               <Button type="submit" className="w-full gap-2" size="lg" disabled={!selectedStudent || !amount || sending}>
                 <Printer className="w-4 h-4" />
