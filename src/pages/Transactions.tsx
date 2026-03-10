@@ -154,7 +154,9 @@ const Transactions = () => {
     printReceipt(student, type, amt, newBalance, note);
 
     // Send WhatsApp notification
-    await sendWhatsAppNotification(student, type, amt, newBalance);
+    if (sendWA && student.parent_phone) {
+      await sendWhatsAppNotification(student, type, amt, newBalance);
+    }
 
     // Refresh
     const { data: refreshed } = await supabase.from("students").select("*").order("name");
