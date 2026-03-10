@@ -84,10 +84,17 @@ const Transactions = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
   const [sendWA, setSendWA] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     supabase.from("students").select("*").order("name").then(({ data }) => setStudents(data || []));
   }, []);
+
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery) return students;
+    const q = searchQuery.toLowerCase();
+    return students.filter(s => s.name.toLowerCase().includes(q) || s.nis.includes(q) || s.class.toLowerCase().includes(q));
+  }, [students, searchQuery]);
 
   const student = students.find((s) => s.id === selectedStudent);
 
