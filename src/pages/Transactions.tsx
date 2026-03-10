@@ -82,6 +82,7 @@ const Transactions = () => {
   const [note, setNote] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
+  const [sendWA, setSendWA] = useState(true);
 
   useEffect(() => {
     supabase.from("students").select("*").order("name").then(({ data }) => setStudents(data || []));
