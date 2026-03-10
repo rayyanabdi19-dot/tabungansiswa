@@ -19,6 +19,7 @@ const parentMenu = [
 
 const settingsMenu = [
   { icon: Settings, label: "Profil Sekolah", path: "/settings" },
+  { icon: Users, label: "Profil Admin", path: "/profile" },
   { icon: Info, label: "Tentang Aplikasi", path: "/about" },
 ];
 
