@@ -221,6 +221,19 @@ const Transactions = () => {
                 <Textarea placeholder="Setoran mingguan..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
               </div>
 
+              {student?.parent_phone && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📱</span>
+                    <div>
+                      <p className="text-sm font-medium">Kirim Notifikasi WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">Ke {student.parent_phone}</p>
+                    </div>
+                  </div>
+                  <Switch checked={sendWA} onCheckedChange={setSendWA} />
+                </div>
+              )}
+
               <Button type="submit" className="w-full gap-2" size="lg" disabled={!selectedStudent || !amount || sending}>
                 <Printer className="w-4 h-4" />
                 {type === "setoran" ? "Simpan & Cetak Bukti" : "Proses & Cetak Bukti"}
