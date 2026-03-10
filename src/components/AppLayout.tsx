@@ -8,15 +8,15 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       {!isMobile && <AppSidebar />}
       
       {/* Mobile sidebar overlay */}
       {isMobile && sidebarOpen && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed left-0 top-0 bottom-0 z-50 w-64 animate-fade-in">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 bottom-0 z-50 w-64 shadow-2xl animate-slide-in-right" style={{ animationName: 'slideInLeft' }}>
             <AppSidebar onClose={() => setSidebarOpen(false)} />
           </div>
         </>
@@ -28,6 +28,13 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
           {children}
         </main>
       </div>
+
+      <style>{`
+        @keyframes slideInLeft {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
     </div>
   );
 };
