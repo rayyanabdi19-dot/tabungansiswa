@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ArrowUpRight, ArrowDownRight, Printer } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ArrowUpRight, ArrowDownRight, Printer, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
