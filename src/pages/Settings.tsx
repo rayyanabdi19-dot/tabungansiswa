@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 const Settings = () => {
   const { toast } = useToast();
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleDarkMode = (checked: boolean) => {
     setIsDark(checked);
@@ -37,6 +39,7 @@ const Settings = () => {
     phone: "",
     email: "",
     principal: "",
+    logo_url: "",
   });
 
   useEffect(() => {
@@ -53,11 +56,40 @@ const Settings = () => {
           phone: data.phone || "",
           email: data.email || "",
           principal: data.principal || "",
+          logo_url: (data as any).logo_url || "",
         });
       }
     };
     load();
   }, []);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Format tidak valid", description: "Pilih file gambar (JPG, PNG, dll)", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `logo_${Date.now()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage.from("school-logos").upload(path, file, { upsert: true });
+    if (uploadErr) {
+      toast({ title: "Gagal upload", description: uploadErr.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("school-logos").getPublicUrl(path);
+    setSchoolData((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
+    setUploading(false);
+    toast({ title: "Logo berhasil diupload ✅" });
+  };
+
+  const removeLogo = () => {
+    setSchoolData((prev) => ({ ...prev, logo_url: "" }));
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
