@@ -96,7 +96,7 @@ const Reports = () => {
     const { default: autoTable } = await import("jspdf-autotable");
 
     const doc = new jsPDF();
-    const startY = addSchoolHeader(doc);
+    const startY = await addSchoolHeader(doc);
 
     doc.setFontSize(12);
     doc.setFont(undefined, "bold");
