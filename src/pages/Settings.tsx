@@ -102,6 +102,7 @@ const Settings = () => {
       phone: schoolData.phone,
       email: schoolData.email,
       principal: schoolData.principal,
+      logo_url: schoolData.logo_url,
       updated_at: new Date().toISOString(),
     };
 
