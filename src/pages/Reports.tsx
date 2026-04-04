@@ -53,18 +53,39 @@ const Reports = () => {
     });
   };
 
-  const addSchoolHeader = (doc: any) => {
+  const addSchoolHeader = async (doc: any) => {
     const pageWidth = doc.internal.pageSize.getWidth();
+    let logoXEnd = 14;
+
+    // Try to add logo
+    const logoUrl = (school as any)?.logo_url;
+    if (logoUrl) {
+      try {
+        const response = await fetch(logoUrl);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        const dataUrl: string = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        doc.addImage(dataUrl, "JPEG", 14, 8, 18, 18);
+        logoXEnd = 35;
+      } catch (e) {
+        console.warn("Failed to load logo for PDF", e);
+      }
+    }
+
+    const textCenter = (pageWidth + logoXEnd - 14) / 2 + 14;
     doc.setFontSize(14);
     doc.setFont(undefined, "bold");
-    doc.text(school?.name || "Sekolah", pageWidth / 2, 16, { align: "center" });
+    doc.text(school?.name || "Sekolah", textCenter, 16, { align: "center" });
     doc.setFontSize(9);
     doc.setFont(undefined, "normal");
     const addr = [school?.address, school?.city, school?.province].filter(Boolean).join(", ");
-    if (addr) doc.text(addr, pageWidth / 2, 22, { align: "center" });
+    if (addr) doc.text(addr, textCenter, 22, { align: "center" });
     const contact = [school?.phone ? `Telp: ${school.phone}` : null, school?.email].filter(Boolean).join(" | ");
-    if (contact) doc.text(contact, pageWidth / 2, 27, { align: "center" });
-    if (school?.npsn) doc.text(`NPSN: ${school.npsn}`, pageWidth / 2, 32, { align: "center" });
+    if (contact) doc.text(contact, textCenter, 27, { align: "center" });
+    if (school?.npsn) doc.text(`NPSN: ${school.npsn}`, textCenter, 32, { align: "center" });
     doc.setLineWidth(0.5);
     doc.line(14, 35, pageWidth - 14, 35);
     return 42;

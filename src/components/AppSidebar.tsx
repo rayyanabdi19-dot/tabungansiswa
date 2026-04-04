@@ -1,8 +1,9 @@
 import { LayoutDashboard, Users, ArrowUpDown, History, LogOut, PiggyBank, Settings, Info, ChevronDown, CreditCard, X, FileBarChart, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const adminMenu = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
