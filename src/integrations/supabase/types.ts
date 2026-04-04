@@ -123,6 +123,7 @@ export type Database = {
           city: string | null
           email: string | null
           id: string
+          logo_url: string | null
           name: string
           npsn: string | null
           phone: string | null
@@ -135,6 +136,7 @@ export type Database = {
           city?: string | null
           email?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           npsn?: string | null
           phone?: string | null
@@ -147,6 +149,7 @@ export type Database = {
           city?: string | null
           email?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           npsn?: string | null
           phone?: string | null
