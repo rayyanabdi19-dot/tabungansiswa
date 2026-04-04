@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { School, Save, Moon, Sun } from "lucide-react";
+import { School, Save, Moon, Sun, Upload, X } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 const Settings = () => {
   const { toast } = useToast();
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleDarkMode = (checked: boolean) => {
     setIsDark(checked);
@@ -37,6 +39,7 @@ const Settings = () => {
     phone: "",
     email: "",
     principal: "",
+    logo_url: "",
   });
 
   useEffect(() => {
@@ -53,11 +56,40 @@ const Settings = () => {
           phone: data.phone || "",
           email: data.email || "",
           principal: data.principal || "",
+          logo_url: (data as any).logo_url || "",
         });
       }
     };
     load();
   }, []);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Format tidak valid", description: "Pilih file gambar (JPG, PNG, dll)", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `logo_${Date.now()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage.from("school-logos").upload(path, file, { upsert: true });
+    if (uploadErr) {
+      toast({ title: "Gagal upload", description: uploadErr.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("school-logos").getPublicUrl(path);
+    setSchoolData((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
+    setUploading(false);
+    toast({ title: "Logo berhasil diupload ✅" });
+  };
+
+  const removeLogo = () => {
+    setSchoolData((prev) => ({ ...prev, logo_url: "" }));
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +102,7 @@ const Settings = () => {
       phone: schoolData.phone,
       email: schoolData.email,
       principal: schoolData.principal,
+      logo_url: schoolData.logo_url,
       updated_at: new Date().toISOString(),
     };
 
@@ -105,12 +138,26 @@ const Settings = () => {
           <CardContent>
             <form onSubmit={handleSave} className="space-y-5">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 border border-border/50">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <School className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  {schoolData.logo_url ? (
+                    <>
+                      <img src={schoolData.logo_url} alt="Logo Sekolah" className="w-full h-full object-cover" />
+                      <button type="button" onClick={removeLogo} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <School className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                  )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="font-semibold truncate">{schoolData.name || "Nama Sekolah"}</p>
                   <p className="text-sm text-muted-foreground">NPSN: {schoolData.npsn || "-"}</p>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                  <Button type="button" variant="outline" size="sm" className="mt-2 gap-1.5" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    <Upload className="w-3.5 h-3.5" />
+                    {uploading ? "Mengupload..." : "Upload Logo"}
+                  </Button>
                 </div>
               </div>
 
