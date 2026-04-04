@@ -138,12 +138,26 @@ const Settings = () => {
           <CardContent>
             <form onSubmit={handleSave} className="space-y-5">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 border border-border/50">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <School className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  {schoolData.logo_url ? (
+                    <>
+                      <img src={schoolData.logo_url} alt="Logo Sekolah" className="w-full h-full object-cover" />
+                      <button type="button" onClick={removeLogo} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <School className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                  )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="font-semibold truncate">{schoolData.name || "Nama Sekolah"}</p>
                   <p className="text-sm text-muted-foreground">NPSN: {schoolData.npsn || "-"}</p>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                  <Button type="button" variant="outline" size="sm" className="mt-2 gap-1.5" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    <Upload className="w-3.5 h-3.5" />
+                    {uploading ? "Mengupload..." : "Upload Logo"}
+                  </Button>
                 </div>
               </div>
 
