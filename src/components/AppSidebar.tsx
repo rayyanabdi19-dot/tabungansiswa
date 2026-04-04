@@ -1,8 +1,9 @@
 import { LayoutDashboard, Users, ArrowUpDown, History, LogOut, PiggyBank, Settings, Info, ChevronDown, CreditCard, X, FileBarChart, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const adminMenu = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -30,6 +31,13 @@ const AppSidebar = ({ onClose }: { onClose?: () => void }) => {
   const [settingsOpen, setSettingsOpen] = useState(
     settingsMenu.some((m) => m.path === location.pathname)
   );
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.from("school_settings").select("logo_url").limit(1).single().then(({ data }) => {
+      if (data && (data as any).logo_url) setLogoUrl((data as any).logo_url);
+    });
+  }, []);
 
   const menu = role === "parent" ? parentMenu : adminMenu;
 
@@ -57,8 +65,12 @@ const AppSidebar = ({ onClose }: { onClose?: () => void }) => {
     <aside className="w-64 min-h-screen bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
       <div className="p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-accent flex items-center justify-center shadow-lg shadow-sidebar-primary/20">
-            <PiggyBank className="w-6 h-6 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-accent flex items-center justify-center shadow-lg shadow-sidebar-primary/20 overflow-hidden">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <PiggyBank className="w-6 h-6 text-sidebar-primary-foreground" />
+            )}
           </div>
           <div>
             <h1 className="font-bold text-base leading-tight">TabunganKu</h1>
