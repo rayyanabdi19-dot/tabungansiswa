@@ -40,6 +40,16 @@ const ParentDashboard = () => {
           .in("student_id", ids)
           .eq("status", "active");
         setLoans(lns || []);
+
+        if (lns && lns.length > 0) {
+          const loanIds = lns.map((l) => l.id);
+          const { data: payments } = await supabase
+            .from("loan_payments")
+            .select("*")
+            .in("loan_id", loanIds)
+            .order("created_at", { ascending: false });
+          setLoanPayments(payments || []);
+        }
       }
       setLoading(false);
     };
