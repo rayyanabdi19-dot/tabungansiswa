@@ -6,8 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { formatRupiah } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const History = () => {
+  const { user, role } = useAuth();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -15,15 +17,29 @@ const History = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("transactions")
-        .select("*, students(name)")
-        .order("created_at", { ascending: false });
-      setTransactions(data || []);
+      if (role === "parent" && user) {
+        // Parent: only show their children's transactions
+        const { data: kids } = await supabase.from("students").select("id").eq("parent_user_id", user.id);
+        if (kids && kids.length > 0) {
+          const ids = kids.map(k => k.id);
+          const { data } = await supabase
+            .from("transactions")
+            .select("*, students(name)")
+            .in("student_id", ids)
+            .order("created_at", { ascending: false });
+          setTransactions(data || []);
+        }
+      } else {
+        const { data } = await supabase
+          .from("transactions")
+          .select("*, students(name)")
+          .order("created_at", { ascending: false });
+        setTransactions(data || []);
+      }
       setLoading(false);
     };
     load();
-  }, []);
+  }, [user, role]);
 
   const filtered = transactions.filter((tx) => {
     const name = (tx.students as any)?.name || "";
