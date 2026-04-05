@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ const ParentDashboard = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
+  const [loanPayments, setLoanPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
