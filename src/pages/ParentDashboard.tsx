@@ -157,7 +157,42 @@ const ParentDashboard = () => {
           </Card>
         )}
 
-        <Card className="glass-card">
+        {loanPayments.length > 0 && (
+          <Card className="glass-card mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Riwayat Cicilan
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {loanPayments.map((payment) => {
+                  const loan = loans.find((l) => l.id === payment.loan_id);
+                  const student = loan ? students.find((s) => s.id === loan.student_id) : null;
+                  return (
+                    <div key={payment.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-success/10">
+                          <Receipt className="w-4 h-4 text-success" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
+                          <p className="text-xs text-muted-foreground">Cicilan pinjaman</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-success">{formatRupiah(Number(payment.amount))}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString("id-ID")}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
           <CardHeader>
             <CardTitle className="text-lg">Riwayat Transaksi</CardTitle>
           </CardHeader>
