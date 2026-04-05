@@ -46,23 +46,40 @@ const Login = () => {
     setLoading(true);
     const parentEmail = `parent-${nis}@tabunganku.app`;
     const parentPassword = `nis-${nis}-parent`;
+
+    // Try login first
     const { error } = await supabase.auth.signInWithPassword({ email: parentEmail, password: parentPassword });
     if (!error) {
-      const { data: { user: loggedUser } } = await supabase.auth.getUser();
-      if (loggedUser) await supabase.from("students").update({ parent_user_id: loggedUser.id }).eq("nis", nis);
       navigate("/dashboard");
       setLoading(false);
       return;
     }
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email: parentEmail, password: parentPassword, options: { data: { full_name: `Orang Tua (NIS: ${nis})`, role: "parent" } } });
-    if (signUpError) { toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" }); setLoading(false); return; }
-    if (!signUpData.session) { toast({ title: "Login Gagal", description: "Akun tidak dapat dibuat. Hubungi admin.", variant: "destructive" }); setLoading(false); return; }
+
+    // If login fails, check NIS exists before signup
+    const { data: studentCheck } = await supabase.from("students").select("id").eq("nis", nis).maybeSingle();
+    if (!studentCheck) {
+      toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    // Sign up new parent account
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: parentEmail,
+      password: parentPassword,
+      options: { data: { full_name: `Orang Tua (NIS: ${nis})`, role: "parent" } },
+    });
+    if (signUpError || !signUpData.session) {
+      toast({ title: "Login Gagal", description: signUpError?.message || "Akun tidak dapat dibuat. Hubungi admin.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    // Link parent to student
     if (signUpData.user) {
       await supabase.from("students").update({ parent_user_id: signUpData.user.id }).eq("nis", nis);
-      const { data: student } = await supabase.from("students").select("id").eq("nis", nis).eq("parent_user_id", signUpData.user.id).single();
-      if (!student) { await supabase.auth.signOut(); toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" }); setLoading(false); return; }
-      navigate("/dashboard");
     }
+    navigate("/dashboard");
     setLoading(false);
   };
 

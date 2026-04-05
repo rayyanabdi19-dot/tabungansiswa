@@ -16,6 +16,7 @@ const adminMenu = [
 
 const parentMenu = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: History, label: "Riwayat Transaksi", path: "/history" },
 ];
 
 const settingsMenu = [

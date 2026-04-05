@@ -34,7 +34,7 @@ const App = () => (
             <Route path="/students" element={<ProtectedRoute allowedRoles={["admin"]}><Students /></ProtectedRoute>} />
             <Route path="/transactions" element={<ProtectedRoute allowedRoles={["admin"]}><Transactions /></ProtectedRoute>} />
             <Route path="/loans" element={<ProtectedRoute allowedRoles={["admin"]}><Loans /></ProtectedRoute>} />
-            <Route path="/history" element={<ProtectedRoute allowedRoles={["admin"]}><History /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute allowedRoles={["admin", "parent"]}><History /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute allowedRoles={["admin"]}><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute allowedRoles={["admin"]}><Profile /></ProtectedRoute>} />
