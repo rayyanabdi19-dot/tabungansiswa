@@ -44,19 +44,22 @@ const Login = () => {
   const handleParentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const parentEmail = `parent-${nis}@tabunganku.app`;
-    const parentPassword = `nis-${nis}-parent`;
+    const trimmedNis = nis.trim();
+    const parentEmail = `parent-${trimmedNis}@tabunganku.app`;
+    const parentPassword = `nis-${trimmedNis}-parent`;
 
     // Try login first
-    const { error } = await supabase.auth.signInWithPassword({ email: parentEmail, password: parentPassword });
-    if (!error) {
+    const { data: loginData, error } = await supabase.auth.signInWithPassword({ email: parentEmail, password: parentPassword });
+    if (!error && loginData.user) {
+      // Re-link parent on every login to ensure sync
+      await supabase.rpc("link_parent_to_student", { _nis: trimmedNis, _parent_user_id: loginData.user.id });
       navigate("/dashboard");
       setLoading(false);
       return;
     }
 
     // If login fails, check NIS exists before signup
-    const { data: studentCheck } = await supabase.from("students").select("id").eq("nis", nis).maybeSingle();
+    const { data: studentCheck } = await supabase.from("students").select("id").eq("nis", trimmedNis).maybeSingle();
     if (!studentCheck) {
       toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" });
       setLoading(false);
@@ -67,7 +70,7 @@ const Login = () => {
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: parentEmail,
       password: parentPassword,
-      options: { data: { full_name: `Orang Tua (NIS: ${nis})`, role: "parent" } },
+      options: { data: { full_name: `Orang Tua (NIS: ${trimmedNis})`, role: "parent" } },
     });
     if (signUpError || !signUpData.session) {
       toast({ title: "Login Gagal", description: signUpError?.message || "Akun tidak dapat dibuat. Hubungi admin.", variant: "destructive" });
@@ -75,9 +78,9 @@ const Login = () => {
       return;
     }
 
-    // Link parent to student
+    // Link parent to student using secure function
     if (signUpData.user) {
-      await supabase.from("students").update({ parent_user_id: signUpData.user.id }).eq("nis", nis);
+      await supabase.rpc("link_parent_to_student", { _nis: trimmedNis, _parent_user_id: signUpData.user.id });
     }
     navigate("/dashboard");
     setLoading(false);
