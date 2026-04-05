@@ -269,6 +269,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      link_parent_to_student: {
+        Args: { _nis: string; _parent_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "parent"
