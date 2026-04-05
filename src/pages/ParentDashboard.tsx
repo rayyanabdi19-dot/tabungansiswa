@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ const ParentDashboard = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
+  const [loanPayments, setLoanPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +40,16 @@ const ParentDashboard = () => {
           .in("student_id", ids)
           .eq("status", "active");
         setLoans(lns || []);
+
+        if (lns && lns.length > 0) {
+          const loanIds = lns.map((l) => l.id);
+          const { data: payments } = await supabase
+            .from("loan_payments")
+            .select("*")
+            .in("loan_id", loanIds)
+            .order("created_at", { ascending: false });
+          setLoanPayments(payments || []);
+        }
       }
       setLoading(false);
     };
@@ -137,6 +148,42 @@ const ParentDashboard = () => {
                       <div className="text-right">
                         <p className="text-sm font-semibold text-warning">{formatRupiah(Number(loan.remaining))}</p>
                         <p className="text-xs text-muted-foreground">sisa</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {loanPayments.length > 0 && (
+          <Card className="glass-card mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Riwayat Cicilan
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {loanPayments.map((payment) => {
+                  const loan = loans.find((l) => l.id === payment.loan_id);
+                  const student = loan ? students.find((s) => s.id === loan.student_id) : null;
+                  return (
+                    <div key={payment.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-success/10">
+                          <Receipt className="w-4 h-4 text-success" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
+                          <p className="text-xs text-muted-foreground">Cicilan pinjaman</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-success">{formatRupiah(Number(payment.amount))}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString("id-ID")}</p>
                       </div>
                     </div>
                   );
