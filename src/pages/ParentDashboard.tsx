@@ -193,6 +193,7 @@ const ParentDashboard = () => {
           </Card>
         )}
 
+        <Card className="glass-card">
           <CardHeader>
             <CardTitle className="text-lg">Riwayat Transaksi</CardTitle>
           </CardHeader>
