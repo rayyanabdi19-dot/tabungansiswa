@@ -107,6 +107,45 @@ const ParentDashboard = () => {
           </Card>
         ))}
 
+        {loans.length > 0 && (
+          <Card className="glass-card mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Pinjaman Aktif</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {loans.map((loan) => {
+                  const student = students.find((s) => s.id === loan.student_id);
+                  return (
+                    <div key={loan.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-warning/10">
+                          <CreditCard className="w-4 h-4 text-warning" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Pinjaman: {formatRupiah(Number(loan.amount))}
+                          </p>
+                          {loan.due_date && (
+                            <p className="text-xs text-muted-foreground">
+                              Jatuh tempo: {new Date(loan.due_date).toLocaleDateString("id-ID")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-warning">{formatRupiah(Number(loan.remaining))}</p>
+                        <p className="text-xs text-muted-foreground">sisa</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="text-lg">Riwayat Transaksi</CardTitle>
