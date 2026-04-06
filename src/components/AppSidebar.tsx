@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 
 const adminMenu = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -42,39 +43,51 @@ const AppSidebar = ({ onClose }: { onClose?: () => void }) => {
 
   const menu = role === "parent" ? parentMenu : adminMenu;
 
-  const renderItem = (item: { icon: any; label: string; path: string }) => {
+  const renderItem = (item: { icon: any; label: string; path: string }, index: number) => {
     const isActive = location.pathname === item.path;
     return (
-      <button
+      <motion.button
         key={item.path}
+        initial={{ opacity: 0, x: -16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
         onClick={() => { navigate(item.path); onClose?.(); }}
         className={cn(
           "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
           isActive
-            ? "bg-sidebar-primary/20 text-sidebar-primary shadow-sm"
+            ? "bg-sidebar-primary/20 text-sidebar-primary shadow-sm backdrop-blur-sm"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
         )}
       >
         <item.icon className={cn("w-5 h-5 transition-transform", isActive && "scale-110")} />
         {item.label}
-        {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary" />}
-      </button>
+        {isActive && (
+          <motion.div
+            layoutId="sidebar-indicator"
+            className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary"
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          />
+        )}
+      </motion.button>
     );
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
-      <div className="p-5 flex items-center justify-between">
+    <aside className="w-64 min-h-screen bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border relative overflow-hidden">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+
+      <div className="p-5 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-accent flex items-center justify-center shadow-lg shadow-sidebar-primary/20 overflow-hidden">
+          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden">
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <PiggyBank className="w-6 h-6 text-sidebar-primary-foreground" />
+              <PiggyBank className="w-6 h-6 text-white" />
             )}
           </div>
           <div>
-            <h1 className="font-bold text-base leading-tight">TabunganKu</h1>
+            <h1 className="font-bold text-base leading-tight font-heading">TabunganKu</h1>
             <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">Mickro Data 2R</p>
           </div>
         </div>
@@ -85,9 +98,9 @@ const AppSidebar = ({ onClose }: { onClose?: () => void }) => {
         )}
       </div>
 
-      <nav className="flex-1 px-3 mt-2 space-y-1">
+      <nav className="flex-1 px-3 mt-2 space-y-1 relative z-10">
         <p className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">Menu Utama</p>
-        {menu.map(renderItem)}
+        {menu.map((item, i) => renderItem(item, i))}
 
         {role === "admin" && (
           <div className="pt-4">
@@ -96,18 +109,28 @@ const AppSidebar = ({ onClose }: { onClose?: () => void }) => {
               className="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30 hover:text-sidebar-foreground/50 transition-colors"
             >
               Pengaturan
-              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", settingsOpen && "rotate-180")} />
+              <motion.div animate={{ rotate: settingsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </motion.div>
             </button>
-            {settingsOpen && (
-              <div className="space-y-1 mt-1 animate-fade-in">
-                {settingsMenu.map(renderItem)}
-              </div>
-            )}
+            <AnimatePresence>
+              {settingsOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden space-y-1 mt-1"
+                >
+                  {settingsMenu.map((item, i) => renderItem(item, i))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </nav>
 
-      <div className="p-3 mt-auto border-t border-sidebar-border">
+      <div className="p-3 mt-auto border-t border-sidebar-border relative z-10">
         <button
           onClick={async () => { await signOut(); navigate("/"); }}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"

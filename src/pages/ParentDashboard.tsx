@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRupiah } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { PageSkeleton } from "@/components/GlassSkeleton";
+import PageTransition, { StaggerContainer, StaggerItem } from "@/components/PageTransition";
 
 const ParentDashboard = () => {
   const { user } = useAuth();
@@ -18,101 +21,48 @@ const ParentDashboard = () => {
 
   const loadData = async () => {
     if (!user) return;
-    const { data: studs } = await supabase
-      .from("students")
-      .select("*")
-      .eq("parent_user_id", user.id);
-
+    const { data: studs } = await supabase.from("students").select("*").eq("parent_user_id", user.id);
     setStudents(studs || []);
 
     if (studs && studs.length > 0) {
       const ids = studs.map((s) => s.id);
-      const { data: txs } = await supabase
-        .from("transactions")
-        .select("*")
-        .in("student_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data: txs } = await supabase.from("transactions").select("*").in("student_id", ids).order("created_at", { ascending: false }).limit(20);
       setTransactions(txs || []);
 
-      const { data: lns } = await supabase
-        .from("loans")
-        .select("*")
-        .in("student_id", ids)
-        .eq("status", "active");
+      const { data: lns } = await supabase.from("loans").select("*").in("student_id", ids).eq("status", "active");
       setLoans(lns || []);
 
       if (lns && lns.length > 0) {
         const loanIds = lns.map((l) => l.id);
-        const { data: payments } = await supabase
-          .from("loan_payments")
-          .select("*")
-          .in("loan_id", loanIds)
-          .order("created_at", { ascending: false });
+        const { data: payments } = await supabase.from("loan_payments").select("*").in("loan_id", loanIds).order("created_at", { ascending: false });
         setLoanPayments(payments || []);
       }
     }
     setLoading(false);
   };
 
+  useEffect(() => { if (user) loadData(); }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    loadData();
-  }, [user]);
+    const txChannel = supabase.channel("parent-transactions").on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, (payload) => {
+      const tx = payload.new as any;
+      const student = students.find((s) => s.id === tx.student_id);
+      if (student) {
+        toast({ title: `${tx.type === "setoran" ? "💰 Setoran Baru" : "💸 Penarikan Baru"}`, description: `${student.name}: ${formatRupiah(Number(tx.amount))}` });
+        loadData();
+      }
+    }).subscribe();
 
-  // Real-time notifications
-  useEffect(() => {
-    if (!user) return;
+    const paymentChannel = supabase.channel("parent-loan-payments").on("postgres_changes", { event: "INSERT", schema: "public", table: "loan_payments" }, (payload) => {
+      toast({ title: "📋 Cicilan Baru Tercatat", description: `Pembayaran cicilan: ${formatRupiah(Number((payload.new as any).amount))}` });
+      loadData();
+    }).subscribe();
 
-    const txChannel = supabase
-      .channel("parent-transactions")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "transactions" },
-        (payload) => {
-          const tx = payload.new as any;
-          const student = students.find((s) => s.id === tx.student_id);
-          if (student) {
-            toast({
-              title: `${tx.type === "setoran" ? "💰 Setoran Baru" : "💸 Penarikan Baru"}`,
-              description: `${student.name}: ${formatRupiah(Number(tx.amount))}`,
-            });
-            loadData();
-          }
-        }
-      )
-      .subscribe();
-
-    const paymentChannel = supabase
-      .channel("parent-loan-payments")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "loan_payments" },
-        (payload) => {
-          toast({
-            title: "📋 Cicilan Baru Tercatat",
-            description: `Pembayaran cicilan: ${formatRupiah(Number((payload.new as any).amount))}`,
-          });
-          loadData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(txChannel);
-      supabase.removeChannel(paymentChannel);
-    };
+    return () => { supabase.removeChannel(txChannel); supabase.removeChannel(paymentChannel); };
   }, [user, students]);
 
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground animate-pulse">Memuat data...</p>
-        </div>
-      </AppLayout>
-    );
-  }
+  if (loading) return <AppLayout><PageSkeleton /></AppLayout>;
 
   const totalBalance = students.reduce((s, st) => s + Number(st.balance), 0);
   const totalLoans = loans.reduce((s, l) => s + Number(l.remaining), 0);
@@ -120,9 +70,9 @@ const ParentDashboard = () => {
 
   return (
     <AppLayout>
-      <div className="animate-fade-in">
+      <PageTransition>
         <div className="mb-6">
-          <h1 className="text-xl md:text-2xl font-bold">Dashboard Orang Tua</h1>
+          <h1 className="text-xl md:text-2xl font-bold font-heading">Dashboard Orang Tua</h1>
           <p className="text-muted-foreground text-sm flex items-center gap-2">
             Pantau tabungan anak Anda
             <span className="inline-flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
@@ -131,129 +81,134 @@ const ParentDashboard = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card className="glass-card">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Saldo</p>
-                  <p className="text-2xl font-bold mt-1">{formatRupiah(totalBalance)}</p>
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <StaggerItem>
+            <Card className="glass-card hover:scale-[1.02] transition-transform duration-300">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div><p className="text-sm text-muted-foreground">Total Saldo</p><p className="text-2xl font-bold mt-1 font-heading">{formatRupiah(totalBalance)}</p></div>
+                  <div className="p-2.5 rounded-xl bg-primary/10"><Wallet className="w-5 h-5 text-primary" /></div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-primary/10">
-                  <Wallet className="w-5 h-5 text-primary" />
+              </CardContent>
+            </Card>
+          </StaggerItem>
+          <StaggerItem>
+            <Card className="glass-card hover:scale-[1.02] transition-transform duration-300">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div><p className="text-sm text-muted-foreground">Pinjaman Aktif</p><p className="text-2xl font-bold mt-1 font-heading">{formatRupiah(totalLoans)}</p></div>
+                  <div className="p-2.5 rounded-xl bg-warning/10"><CreditCard className="w-5 h-5 text-warning" /></div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pinjaman Aktif</p>
-                  <p className="text-2xl font-bold mt-1">{formatRupiah(totalLoans)}</p>
+              </CardContent>
+            </Card>
+          </StaggerItem>
+          <StaggerItem>
+            <Card className="glass-card hover:scale-[1.02] transition-transform duration-300">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div><p className="text-sm text-muted-foreground">Total Cicilan Dibayar</p><p className="text-2xl font-bold mt-1 font-heading">{formatRupiah(totalPaidInstallments)}</p></div>
+                  <div className="p-2.5 rounded-xl bg-success/10"><CheckCircle className="w-5 h-5 text-success" /></div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-warning/10">
-                  <CreditCard className="w-5 h-5 text-warning" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Cicilan Dibayar</p>
-                  <p className="text-2xl font-bold mt-1">{formatRupiah(totalPaidInstallments)}</p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-success/10">
-                  <CheckCircle className="w-5 h-5 text-success" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </StaggerItem>
+        </StaggerContainer>
 
-        {students.map((student) => (
-          <Card key={student.id} className="glass-card mb-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                {student.name} — Kelas {student.class}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">NIS: {student.nis}</p>
-              <p className="text-lg font-bold text-primary">{formatRupiah(Number(student.balance))}</p>
-            </CardHeader>
-          </Card>
+        {students.map((student, i) => (
+          <motion.div key={student.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+            <Card className="glass-card mb-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-heading">{student.name} — Kelas {student.class}</CardTitle>
+                <p className="text-sm text-muted-foreground">NIS: {student.nis}</p>
+                <p className="text-lg font-bold gradient-text">{formatRupiah(Number(student.balance))}</p>
+              </CardHeader>
+            </Card>
+          </motion.div>
         ))}
 
         {loans.length > 0 && (
-          <Card className="glass-card mb-4">
-            <CardHeader>
-              <CardTitle className="text-lg">Pinjaman Aktif</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {loans.map((loan) => {
-                  const student = students.find((s) => s.id === loan.student_id);
-                  return (
-                    <div key={loan.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-warning/10">
-                          <CreditCard className="w-4 h-4 text-warning" />
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="glass-card mb-4">
+              <CardHeader><CardTitle className="text-lg font-heading">Pinjaman Aktif</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {loans.map((loan) => {
+                    const student = students.find((s) => s.id === loan.student_id);
+                    return (
+                      <div key={loan.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-warning/10"><CreditCard className="w-4 h-4 text-warning" /></div>
+                          <div>
+                            <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
+                            <p className="text-xs text-muted-foreground">Pinjaman: {formatRupiah(Number(loan.amount))}</p>
+                            {loan.due_date && <p className="text-xs text-muted-foreground">Jatuh tempo: {new Date(loan.due_date).toLocaleDateString("id-ID")}</p>}
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Pinjaman: {formatRupiah(Number(loan.amount))}
-                          </p>
-                          {loan.due_date && (
-                            <p className="text-xs text-muted-foreground">
-                              Jatuh tempo: {new Date(loan.due_date).toLocaleDateString("id-ID")}
-                            </p>
-                          )}
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-warning">{formatRupiah(Number(loan.remaining))}</p>
+                          <p className="text-xs text-muted-foreground">sisa</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-warning">{formatRupiah(Number(loan.remaining))}</p>
-                        <p className="text-xs text-muted-foreground">sisa</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
         {loanPayments.length > 0 && (
-          <Card className="glass-card mb-4">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Receipt className="w-5 h-5" />
-                Riwayat Cicilan
-                <span className="text-sm font-normal text-muted-foreground ml-auto">
-                  Total: {formatRupiah(totalPaidInstallments)}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {loanPayments.map((payment) => {
-                  const loan = loans.find((l) => l.id === payment.loan_id);
-                  const student = loan ? students.find((s) => s.id === loan.student_id) : null;
-                  return (
-                    <div key={payment.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-success/10">
-                          <Receipt className="w-4 h-4 text-success" />
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="glass-card mb-4">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 font-heading">
+                  <Receipt className="w-5 h-5" /> Riwayat Cicilan
+                  <span className="text-sm font-normal text-muted-foreground ml-auto">Total: {formatRupiah(totalPaidInstallments)}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {loanPayments.map((payment) => {
+                    const loan = loans.find((l) => l.id === payment.loan_id);
+                    const student = loan ? students.find((s) => s.id === loan.student_id) : null;
+                    return (
+                      <div key={payment.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-success/10"><Receipt className="w-4 h-4 text-success" /></div>
+                          <div><p className="text-sm font-medium">{student?.name || "Siswa"}</p><p className="text-xs text-muted-foreground">Cicilan pinjaman</p></div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
-                          <p className="text-xs text-muted-foreground">Cicilan pinjaman</p>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-success">{formatRupiah(Number(payment.amount))}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString("id-ID")}</p>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <Card className="glass-card">
+            <CardHeader><CardTitle className="text-lg font-heading">Riwayat Transaksi</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {transactions.length === 0 && <p className="text-center text-muted-foreground py-8">Belum ada transaksi</p>}
+                {transactions.map((tx) => {
+                  const student = students.find((s) => s.id === tx.student_id);
+                  return (
+                    <div key={tx.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${tx.type === "setoran" ? "bg-success/10" : "bg-warning/10"}`}>
+                          {tx.type === "setoran" ? <ArrowUpRight className="w-4 h-4 text-success" /> : <ArrowDownRight className="w-4 h-4 text-warning" />}
+                        </div>
+                        <div><p className="text-sm font-medium">{student?.name || "Siswa"}</p><p className="text-xs text-muted-foreground">{tx.note || tx.type}</p></div>
+                      </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-success">{formatRupiah(Number(payment.amount))}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString("id-ID")}</p>
+                        <p className={`text-sm font-semibold ${tx.type === "setoran" ? "text-success" : "text-warning"}`}>{tx.type === "setoran" ? "+" : "-"}{formatRupiah(Number(tx.amount))}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString("id-ID")}</p>
                       </div>
                     </div>
                   );
@@ -261,43 +216,8 @@ const ParentDashboard = () => {
               </div>
             </CardContent>
           </Card>
-        )}
-
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-lg">Riwayat Transaksi</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {transactions.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">Belum ada transaksi</p>
-              )}
-              {transactions.map((tx) => {
-                const student = students.find((s) => s.id === tx.student_id);
-                return (
-                  <div key={tx.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${tx.type === "setoran" ? "bg-success/10" : "bg-warning/10"}`}>
-                        {tx.type === "setoran" ? <ArrowUpRight className="w-4 h-4 text-success" /> : <ArrowDownRight className="w-4 h-4 text-warning" />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{student?.name || "Siswa"}</p>
-                        <p className="text-xs text-muted-foreground">{tx.note || tx.type}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${tx.type === "setoran" ? "text-success" : "text-warning"}`}>
-                        {tx.type === "setoran" ? "+" : "-"}{formatRupiah(Number(tx.amount))}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString("id-ID")}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </motion.div>
+      </PageTransition>
     </AppLayout>
   );
 };
