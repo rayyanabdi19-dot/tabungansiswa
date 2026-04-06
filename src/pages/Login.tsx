@@ -216,7 +216,7 @@ const Login = () => {
 
           <div className="text-center mt-8 space-y-1">
             <p className="text-xs text-muted-foreground">© 2026 TabunganKu — Sistem Tabungan Siswa</p>
-            <p className="text-xs text-muted-foreground font-medium">— Mickro Data 2R —</p>
+            <p className="text-xs text-muted-foreground font-medium">Versi 1.5.0</p>
           </div>
         </div>
       </div>
