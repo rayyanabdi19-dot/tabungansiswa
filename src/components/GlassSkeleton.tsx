@@ -104,4 +104,4 @@ export const PageSkeleton = () => (
   </div>
 );
 
-export default GlassSkeleton;
+export default PageSkeleton;
