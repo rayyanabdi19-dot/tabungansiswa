@@ -1,60 +1,108 @@
 import { useEffect, useState } from "react";
-import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard, Receipt } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard, Receipt, CheckCircle, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRupiah } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const ParentDashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [students, setStudents] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [loanPayments, setLoanPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async () => {
+    if (!user) return;
+    const { data: studs } = await supabase
+      .from("students")
+      .select("*")
+      .eq("parent_user_id", user.id);
+
+    setStudents(studs || []);
+
+    if (studs && studs.length > 0) {
+      const ids = studs.map((s) => s.id);
+      const { data: txs } = await supabase
+        .from("transactions")
+        .select("*")
+        .in("student_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setTransactions(txs || []);
+
+      const { data: lns } = await supabase
+        .from("loans")
+        .select("*")
+        .in("student_id", ids)
+        .eq("status", "active");
+      setLoans(lns || []);
+
+      if (lns && lns.length > 0) {
+        const loanIds = lns.map((l) => l.id);
+        const { data: payments } = await supabase
+          .from("loan_payments")
+          .select("*")
+          .in("loan_id", loanIds)
+          .order("created_at", { ascending: false });
+        setLoanPayments(payments || []);
+      }
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
-      const { data: studs } = await supabase
-        .from("students")
-        .select("*")
-        .eq("parent_user_id", user.id);
-
-      setStudents(studs || []);
-
-      if (studs && studs.length > 0) {
-        const ids = studs.map((s) => s.id);
-        const { data: txs } = await supabase
-          .from("transactions")
-          .select("*")
-          .in("student_id", ids)
-          .order("created_at", { ascending: false })
-          .limit(20);
-        setTransactions(txs || []);
-
-        const { data: lns } = await supabase
-          .from("loans")
-          .select("*")
-          .in("student_id", ids)
-          .eq("status", "active");
-        setLoans(lns || []);
-
-        if (lns && lns.length > 0) {
-          const loanIds = lns.map((l) => l.id);
-          const { data: payments } = await supabase
-            .from("loan_payments")
-            .select("*")
-            .in("loan_id", loanIds)
-            .order("created_at", { ascending: false });
-          setLoanPayments(payments || []);
-        }
-      }
-      setLoading(false);
-    };
-    load();
+    loadData();
   }, [user]);
+
+  // Real-time notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const txChannel = supabase
+      .channel("parent-transactions")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "transactions" },
+        (payload) => {
+          const tx = payload.new as any;
+          const student = students.find((s) => s.id === tx.student_id);
+          if (student) {
+            toast({
+              title: `${tx.type === "setoran" ? "💰 Setoran Baru" : "💸 Penarikan Baru"}`,
+              description: `${student.name}: ${formatRupiah(Number(tx.amount))}`,
+            });
+            loadData();
+          }
+        }
+      )
+      .subscribe();
+
+    const paymentChannel = supabase
+      .channel("parent-loan-payments")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "loan_payments" },
+        (payload) => {
+          toast({
+            title: "📋 Cicilan Baru Tercatat",
+            description: `Pembayaran cicilan: ${formatRupiah(Number((payload.new as any).amount))}`,
+          });
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(txChannel);
+      supabase.removeChannel(paymentChannel);
+    };
+  }, [user, students]);
 
   if (loading) {
     return (
@@ -68,16 +116,22 @@ const ParentDashboard = () => {
 
   const totalBalance = students.reduce((s, st) => s + Number(st.balance), 0);
   const totalLoans = loans.reduce((s, l) => s + Number(l.remaining), 0);
+  const totalPaidInstallments = loanPayments.reduce((s, p) => s + Number(p.amount), 0);
 
   return (
     <AppLayout>
       <div className="animate-fade-in">
         <div className="mb-6">
           <h1 className="text-xl md:text-2xl font-bold">Dashboard Orang Tua</h1>
-          <p className="text-muted-foreground text-sm">Pantau tabungan anak Anda</p>
+          <p className="text-muted-foreground text-sm flex items-center gap-2">
+            Pantau tabungan anak Anda
+            <span className="inline-flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
+              <Bell className="w-3 h-3" /> Real-time
+            </span>
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Card className="glass-card">
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
@@ -100,6 +154,19 @@ const ParentDashboard = () => {
                 </div>
                 <div className="p-2.5 rounded-xl bg-warning/10">
                   <CreditCard className="w-5 h-5 text-warning" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="glass-card">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Cicilan Dibayar</p>
+                  <p className="text-2xl font-bold mt-1">{formatRupiah(totalPaidInstallments)}</p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-success/10">
+                  <CheckCircle className="w-5 h-5 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -163,6 +230,9 @@ const ParentDashboard = () => {
               <CardTitle className="text-lg flex items-center gap-2">
                 <Receipt className="w-5 h-5" />
                 Riwayat Cicilan
+                <span className="text-sm font-normal text-muted-foreground ml-auto">
+                  Total: {formatRupiah(totalPaidInstallments)}
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
