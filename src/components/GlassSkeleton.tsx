@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 
+const GlassSkeleton = () => <DashboardSkeleton />;
+
 interface GlassSkeletonProps {
   className?: string;
   count?: number;
