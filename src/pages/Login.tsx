@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
+import { APP_VERSION } from "@/lib/appConfig";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -235,7 +236,7 @@ const Login = () => {
 
           <div className="text-center mt-8 space-y-1">
             <p className="text-xs text-muted-foreground">© 2026 TabunganKu — Sistem Tabungan Siswa</p>
-            <p className="text-xs text-muted-foreground font-medium">Versi 1.5.0</p>
+            <p className="text-xs text-muted-foreground font-medium">Versi {APP_VERSION}</p>
           </div>
         </motion.div>
       </div>
