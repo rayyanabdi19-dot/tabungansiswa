@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { formatRupiah } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
@@ -16,6 +17,7 @@ const emptyForm = { name: "", nis: "", class: "", parentName: "", parentPhone: "
 
 const Students = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,13 +45,14 @@ const Students = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
+    const payload: any = {
       name: form.name,
       nis: form.nis,
       class: form.class,
       parent_name: form.parentName,
       parent_phone: form.parentPhone,
     };
+    if (!editingId) payload.owner_id = user?.id;
 
     if (editingId) {
       const { error } = await supabase.from("students").update(payload).eq("id", editingId);
@@ -121,6 +124,7 @@ const Students = () => {
         class: String(row["Kelas"] || row["kelas"] || row["Class"] || row["class"] || ""),
         parent_name: row["Nama Orang Tua"] || row["Orang Tua"] || row["parent_name"] || "",
         parent_phone: String(row["No HP"] || row["HP"] || row["Phone"] || row["parent_phone"] || row["No. HP Orang Tua"] || ""),
+        owner_id: user?.id,
       })).filter((r) => r.name && r.nis);
 
       if (mapped.length === 0) {

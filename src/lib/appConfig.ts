@@ -1,5 +1,5 @@
 // Centralized app configuration — update this file on every release
-export const APP_VERSION = "1.6.0";
+export const APP_VERSION = "1.7.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.7.0",
+    date: "2026-04-09",
+    type: "release",
+    changes: [
+      "Isolasi data per akun admin — setiap admin mengelola data sendiri",
+      "Perbaikan alur pendaftaran akun baru",
+    ],
+  },
   {
     version: "1.6.0",
     date: "2026-04-09",
