@@ -126,6 +126,7 @@ export type Database = {
           logo_url: string | null
           name: string
           npsn: string | null
+          owner_id: string | null
           phone: string | null
           principal: string | null
           province: string | null
@@ -139,6 +140,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           npsn?: string | null
+          owner_id?: string | null
           phone?: string | null
           principal?: string | null
           province?: string | null
@@ -152,6 +154,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           npsn?: string | null
+          owner_id?: string | null
           phone?: string | null
           principal?: string | null
           province?: string | null
@@ -167,6 +170,7 @@ export type Database = {
           id: string
           name: string
           nis: string
+          owner_id: string | null
           parent_name: string
           parent_phone: string
           parent_user_id: string | null
@@ -179,6 +183,7 @@ export type Database = {
           id?: string
           name: string
           nis: string
+          owner_id?: string | null
           parent_name?: string
           parent_phone?: string
           parent_user_id?: string | null
@@ -191,6 +196,7 @@ export type Database = {
           id?: string
           name?: string
           nis?: string
+          owner_id?: string | null
           parent_name?: string
           parent_phone?: string
           parent_user_id?: string | null
