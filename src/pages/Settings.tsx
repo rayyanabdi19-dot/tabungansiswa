@@ -93,7 +93,7 @@ const Settings = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
+    const payload: any = {
       name: schoolData.name,
       npsn: schoolData.npsn,
       address: schoolData.address,
@@ -105,6 +105,10 @@ const Settings = () => {
       logo_url: schoolData.logo_url,
       updated_at: new Date().toISOString(),
     };
+    if (!schoolData.id) {
+      const { data: { user } } = await supabase.auth.getUser();
+      payload.owner_id = user?.id;
+    }
 
     if (schoolData.id) {
       await supabase.from("school_settings").update(payload).eq("id", schoolData.id);
