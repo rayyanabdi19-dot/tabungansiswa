@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { formatRupiah } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Reports = () => {
   const { toast } = useToast();
@@ -25,9 +26,9 @@ const Reports = () => {
   const fetchData = async () => {
     setLoading(true);
     const [txRes, stRes, lnRes, schRes] = await Promise.all([
-      supabase.from("transactions").select("*, students(name, nis, class)").order("created_at", { ascending: false }),
+      supabase.from("transactions").select("*, students(name, nis, class, photo_url)").order("created_at", { ascending: false }),
       supabase.from("students").select("*").order("name"),
-      supabase.from("loans").select("*, students(name, nis, class)").order("created_at", { ascending: false }),
+      supabase.from("loans").select("*, students(name, nis, class, photo_url)").order("created_at", { ascending: false }),
       supabase.from("school_settings").select("*").limit(1).single(),
     ]);
     setTransactions(txRes.data || []);
@@ -322,7 +323,7 @@ const Reports = () => {
                     )}
                     {reportType === "students" && (
                       <tr>
-                        <th className="text-left px-4 py-2">Nama</th>
+                        <th className="text-left px-4 py-2">Siswa</th>
                         <th className="text-left px-4 py-2">NIS</th>
                         <th className="text-left px-4 py-2">Kelas</th>
                         <th className="text-right px-4 py-2">Saldo</th>
@@ -338,39 +339,75 @@ const Reports = () => {
                     )}
                   </thead>
                   <tbody>
-                    {reportType === "transactions" && getFilteredTransactions().slice(0, 10).map((tx) => (
-                      <tr key={tx.id} className="border-t border-border/50">
-                        <td className="px-4 py-2 whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString("id-ID")}</td>
-                        <td className="px-4 py-2">{(tx.students as any)?.name || "-"}</td>
-                        <td className="px-4 py-2">{(tx.students as any)?.class || "-"}</td>
-                        <td className="px-4 py-2">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${tx.type === "setoran" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
-                            {tx.type === "setoran" ? "Setoran" : "Penarikan"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-right font-medium">{formatRupiah(Number(tx.amount))}</td>
-                      </tr>
-                    ))}
+                    {reportType === "transactions" && getFilteredTransactions().slice(0, 10).map((tx) => {
+                      const st = tx.students as any;
+                      return (
+                        <tr key={tx.id} className="border-t border-border/50">
+                          <td className="px-4 py-2 whitespace-nowrap">{new Date(tx.created_at).toLocaleDateString("id-ID")}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                {st?.photo_url ? <AvatarImage src={st.photo_url} alt={st?.name} /> : null}
+                                <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary/20 to-accent/20">
+                                  {st?.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{st?.name || "-"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">{st?.class || "-"}</td>
+                          <td className="px-4 py-2">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${tx.type === "setoran" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
+                              {tx.type === "setoran" ? "Setoran" : "Penarikan"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-right font-medium">{formatRupiah(Number(tx.amount))}</td>
+                        </tr>
+                      );
+                    })}
                     {reportType === "students" && students.slice(0, 10).map((s) => (
                       <tr key={s.id} className="border-t border-border/50">
-                        <td className="px-4 py-2">{s.name}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7">
+                              {s.photo_url ? <AvatarImage src={s.photo_url} alt={s.name} /> : null}
+                              <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary/20 to-accent/20">
+                                {s.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{s.name}</span>
+                          </div>
+                        </td>
                         <td className="px-4 py-2">{s.nis}</td>
                         <td className="px-4 py-2">{s.class}</td>
                         <td className="px-4 py-2 text-right font-medium">{formatRupiah(Number(s.balance))}</td>
                       </tr>
                     ))}
-                    {reportType === "loans" && loans.slice(0, 10).map((l) => (
-                      <tr key={l.id} className="border-t border-border/50">
-                        <td className="px-4 py-2">{(l.students as any)?.name || "-"}</td>
-                        <td className="px-4 py-2 text-right">{formatRupiah(Number(l.amount))}</td>
-                        <td className="px-4 py-2 text-right">{formatRupiah(Number(l.remaining))}</td>
-                        <td className="px-4 py-2">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${l.status === "active" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>
-                            {l.status === "active" ? "Aktif" : "Lunas"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {reportType === "loans" && loans.slice(0, 10).map((l) => {
+                      const st = l.students as any;
+                      return (
+                        <tr key={l.id} className="border-t border-border/50">
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                {st?.photo_url ? <AvatarImage src={st.photo_url} alt={st?.name} /> : null}
+                                <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary/20 to-accent/20">
+                                  {st?.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{st?.name || "-"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-right">{formatRupiah(Number(l.amount))}</td>
+                          <td className="px-4 py-2 text-right">{formatRupiah(Number(l.remaining))}</td>
+                          <td className="px-4 py-2">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${l.status === "active" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>
+                              {l.status === "active" ? "Aktif" : "Lunas"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

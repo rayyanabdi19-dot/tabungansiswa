@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatRupiah } from "@/lib/utils";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import jsPDF from "jspdf";
 
 const printReceipt = (studentData: any, txType: string, amt: number, newBalance: number, note: string) => {
@@ -217,12 +218,23 @@ const Transactions = () => {
               </div>
 
               {student && (
-                <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
-                  <p className="text-sm text-muted-foreground">Saldo saat ini</p>
-                  <p className="text-xl font-bold text-primary">{formatRupiah(Number(student.balance))}</p>
-                  {student.parent_phone && (
-                    <p className="text-xs text-muted-foreground mt-1">📱 Notifikasi WA akan dikirim ke {student.parent_phone}</p>
-                  )}
+                <div className="p-4 rounded-xl bg-secondary/50 border border-border/50 flex items-center gap-4">
+                  <Avatar className="h-14 w-14 border-2 border-primary/20">
+                    {student.photo_url ? (
+                      <AvatarImage src={student.photo_url} alt={student.name} />
+                    ) : null}
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-bold text-lg">
+                      {student.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-semibold">{student.name}</p>
+                    <p className="text-sm text-muted-foreground">Saldo saat ini</p>
+                    <p className="text-xl font-bold text-primary">{formatRupiah(Number(student.balance))}</p>
+                    {student.parent_phone && (
+                      <p className="text-xs text-muted-foreground mt-1">📱 Notifikasi WA akan dikirim ke {student.parent_phone}</p>
+                    )}
+                  </div>
                 </div>
               )}
 
