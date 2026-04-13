@@ -58,8 +58,8 @@ const Login = () => {
       return;
     }
 
-    const { data: studentCheck } = await supabase.from("students").select("id").eq("nis", trimmedNis).maybeSingle();
-    if (!studentCheck) {
+    const { data: nisExists } = await supabase.rpc("check_nis_exists", { _nis: trimmedNis });
+    if (!nisExists) {
       toast({ title: "NIS Tidak Ditemukan", description: "Pastikan NIS siswa sudah terdaftar oleh admin.", variant: "destructive" });
       setLoading(false);
       return;
