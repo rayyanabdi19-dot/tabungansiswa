@@ -356,6 +356,33 @@ const InfoPage = ({ school, features, recentChanges, onBack }: InfoPageProps) =>
           ))}
         </div>
       </div>
+
+      {/* FAQ */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-2.5 font-heading">FAQ — Pertanyaan Umum</h3>
+        <div className="space-y-2">
+          {[
+            { q: "Bagaimana cara login sebagai Admin?", a: "Pilih tab \"Admin\", masukkan email dan password yang sudah didaftarkan. Jika belum punya akun, klik \"Daftar\" untuk membuat akun baru." },
+            { q: "Bagaimana cara login sebagai Orang Tua?", a: "Pilih tab \"Orang Tua\", lalu masukkan NIS siswa. Akun akan otomatis dibuat jika NIS sudah terdaftar oleh admin." },
+            { q: "Apa itu NIS?", a: "NIS (Nomor Induk Siswa) adalah nomor unik yang diberikan oleh sekolah. Hubungi admin jika belum mengetahui NIS anak Anda." },
+            { q: "Lupa password admin?", a: "Hubungi administrator sekolah untuk mereset password akun Anda." },
+          ].map((item, i) => (
+            <motion.details
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 + i * 0.08 }}
+              className="group p-3 rounded-xl bg-secondary/30 border border-border/20 cursor-pointer"
+            >
+              <summary className="text-xs font-semibold text-foreground list-none flex items-center justify-between">
+                {item.q}
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-open:rotate-90 transition-transform duration-200" />
+              </summary>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">{item.a}</p>
+            </motion.details>
+          ))}
+        </div>
+      </div>
     </div>
   </div>
 );
