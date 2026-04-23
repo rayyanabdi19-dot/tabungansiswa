@@ -390,4 +390,56 @@ const InfoPage = ({ school, features, recentChanges, onBack }: InfoPageProps) =>
   </div>
 );
 
+const InstallPWAButton = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => setInstalled(true));
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") setInstalled(true);
+    setDeferredPrompt(null);
+  };
+
+  if (installed) {
+    return (
+      <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
+        <p className="text-xs font-semibold text-green-600 dark:text-green-400">✅ Aplikasi sudah terpasang!</p>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.9 }}
+      className="p-4 rounded-xl bg-primary/5 border border-primary/15"
+    >
+      <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+        📱 Pasang aplikasi ini di HP Anda untuk akses cepat tanpa buka browser.
+      </p>
+      <Button
+        onClick={handleInstall}
+        disabled={!deferredPrompt}
+        className="w-full h-10 text-xs font-semibold gradient-bg border-0 text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg transition-all duration-300"
+      >
+        <Download className="w-4 h-4 mr-2" />
+        {deferredPrompt ? "Install ke HP (PWA)" : "Buka di browser HP untuk install"}
+      </Button>
+    </motion.div>
+  );
+};
+
 export default Login;
