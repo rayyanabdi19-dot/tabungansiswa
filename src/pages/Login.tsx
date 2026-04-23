@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { APP_VERSION } from "@/lib/appConfig";
+import { useSchoolInfo } from "@/hooks/useSchoolInfo";
 
 const Login = () => {
   const navigate = useNavigate();
