@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PiggyBank, Eye, EyeOff, Loader2, Shield, TrendingUp, Sparkles, BookOpen } from "lucide-react";
+import { PiggyBank, Eye, EyeOff, Loader2, Shield, TrendingUp, Sparkles, BookOpen, ChevronRight, ChevronLeft, Users, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
-import { APP_VERSION } from "@/lib/appConfig";
+import { motion, AnimatePresence } from "framer-motion";
+import { APP_VERSION, CHANGELOG } from "@/lib/appConfig";
 import { useSchoolInfo } from "@/hooks/useSchoolInfo";
 
 const Login = () => {
@@ -25,6 +24,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [flipped, setFlipped] = useState(false);
 
   useEffect(() => {
     if (user && role) navigate("/dashboard", { replace: true });
@@ -86,179 +86,278 @@ const Login = () => {
   };
 
   const features = [
-    { icon: Shield, title: "Aman & Terpercaya", desc: "Data terenkripsi & terlindungi" },
-    { icon: TrendingUp, title: "Pantau Tabungan", desc: "Riwayat transaksi real-time" },
-    { icon: Sparkles, title: "Mudah Digunakan", desc: "Antarmuka modern & intuitif" },
-    { icon: BookOpen, title: "Laporan Lengkap", desc: "Export dan cetak kapan saja" },
+    { icon: Shield, title: "Aman & Terpercaya", desc: "Data terenkripsi dengan standar keamanan tinggi" },
+    { icon: TrendingUp, title: "Pantau Tabungan", desc: "Riwayat transaksi real-time untuk admin & orang tua" },
+    { icon: Sparkles, title: "Mudah Digunakan", desc: "Antarmuka modern, intuitif, dan responsif" },
+    { icon: BookOpen, title: "Laporan Lengkap", desc: "Export PDF & Excel kapan saja" },
+    { icon: Users, title: "Multi Peran", desc: "Portal terpisah untuk admin dan orang tua" },
+    { icon: BarChart3, title: "Analitik Dashboard", desc: "Grafik statistik tabungan per bulan" },
   ];
 
-  return (
-    <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
-      {/* Gradient Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center gradient-bg">
-        <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-transparent to-black/20" />
-        {/* Floating orbs */}
-        <motion.div
-          className="absolute top-20 left-20 w-40 h-40 rounded-full bg-white/10 blur-2xl"
-          animate={{ y: [-20, 20, -20], x: [-10, 10, -10] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-32 right-16 w-56 h-56 rounded-full bg-white/5 blur-3xl"
-          animate={{ y: [15, -15, 15], x: [10, -10, 10] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
+  const recentChanges = CHANGELOG.slice(0, 3);
 
-        <motion.div
-          className="relative z-10 max-w-lg p-12"
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
-          <motion.div
-            className="w-20 h-20 rounded-3xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center mb-8 shadow-2xl overflow-hidden"
-            animate={{ y: [-8, 8, -8] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {school?.logo_url ? (
-              <img src={school.logo_url} alt="Logo Sekolah" className="w-full h-full object-cover" />
-            ) : (
-              <PiggyBank className="w-11 h-11 text-white" />
-            )}
-          </motion.div>
-          <h1 className="text-5xl font-extrabold text-white mb-2 leading-tight font-heading">
-            {school?.name || "TabunganKu"}
-          </h1>
-          {school?.address && (
-            <p className="text-sm text-white/60 mb-1">{school.address}</p>
-          )}
-          {school?.npsn && (
-            <p className="text-xs text-white/50 mb-4">NPSN: {school.npsn}</p>
-          )}
-          <p className="text-lg text-white/80 mb-10 leading-relaxed">
-            Sistem tabungan siswa digital yang modern, aman, dan mudah digunakan.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            {features.map((f, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
-                className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/20 hover:scale-105 transition-all duration-300 group cursor-default"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center mb-3 group-hover:bg-white/25 transition-colors">
-                  <f.icon className="w-5 h-5 text-white" />
-                </div>
-                <p className="font-semibold text-white text-sm">{f.title}</p>
-                <p className="text-xs text-white/60 mt-0.5">{f.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-8 relative overflow-hidden bg-gradient-to-br from-background via-background to-secondary/30">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/8 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-accent/8 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      {/* Login Section */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-background relative">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/8 rounded-full blur-3xl" />
-
+      {/* Book Container */}
+      <div className="relative z-10 w-full max-w-5xl" style={{ perspective: "2000px" }}>
+        {/* School header - mobile */}
         <motion.div
-          className="w-full max-w-md relative z-10"
-          initial={{ opacity: 0, y: 20 }}
+          className="text-center mb-6 lg:hidden"
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {/* Mobile header */}
-          <div className="text-center mb-8 lg:hidden">
-            <motion.div
-              className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/30 overflow-hidden"
-              animate={{ y: [-4, 4, -4] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            >
-              {school?.logo_url ? (
-                <img src={school.logo_url} alt="Logo Sekolah" className="w-full h-full object-cover" />
-              ) : (
-                <PiggyBank className="w-9 h-9 text-white" />
-              )}
-            </motion.div>
-            <h1 className="text-2xl font-extrabold text-foreground font-heading">{school?.name || "TabunganKu"}</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Sistem Tabungan Siswa Digital</p>
-            {school?.address && <p className="text-xs text-muted-foreground mt-0.5">{school.address}</p>}
+          <div className="w-14 h-14 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-3 shadow-xl shadow-primary/30 overflow-hidden">
+            {school?.logo_url ? (
+              <img src={school.logo_url} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <PiggyBank className="w-8 h-8 text-primary-foreground" />
+            )}
           </div>
-
-          <Card className="glass-card border-border/40">
-            <CardContent className="pt-8 pb-8 px-6 md:px-8">
-              <h2 className="text-2xl font-bold text-foreground mb-1 text-center font-heading">Selamat Datang 👋</h2>
-              <p className="text-sm text-muted-foreground mb-8 text-center">Masuk untuk mengelola tabungan</p>
-
-              <div className="flex gap-2 mb-8 p-1 bg-secondary/60 rounded-xl">
-                <Button type="button" variant={loginRole === "admin" ? "default" : "ghost"} className={`flex-1 rounded-lg transition-all duration-300 ${loginRole === "admin" ? "shadow-md" : ""}`} onClick={() => { setLoginRole("admin"); setIsSignup(false); }}>
-                  Admin / Petugas
-                </Button>
-                <Button type="button" variant={loginRole === "parent" ? "default" : "ghost"} className={`flex-1 rounded-lg transition-all duration-300 ${loginRole === "parent" ? "shadow-md" : ""}`} onClick={() => { setLoginRole("parent"); setIsSignup(false); }}>
-                  Orang Tua
-                </Button>
-              </div>
-
-              {loginRole === "admin" ? (
-                <motion.form key="admin" onSubmit={handleAdminLogin} className="space-y-5" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-                  {isSignup && (
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Nama Lengkap</Label>
-                      <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nama lengkap" required className="h-12" />
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@sekolah.id" required className="h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="h-12 pr-12" />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-12 text-base font-semibold gradient-bg border-0 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all duration-300" disabled={loading}>
-                    {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {isSignup ? "Daftar Akun" : "Masuk"}
-                  </Button>
-                  <p className="text-center text-sm text-muted-foreground">
-                    {isSignup ? "Sudah punya akun?" : "Belum punya akun?"}{" "}
-                    <button type="button" onClick={() => setIsSignup(!isSignup)} className="text-primary font-semibold hover:underline">
-                      {isSignup ? "Masuk" : "Daftar"}
-                    </button>
-                  </p>
-                </motion.form>
-              ) : (
-                <motion.form key="parent" onSubmit={handleParentLogin} className="space-y-5" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-                  <div className="space-y-2">
-                    <Label htmlFor="nis">NIS Siswa</Label>
-                    <Input id="nis" value={nis} onChange={(e) => setNis(e.target.value)} placeholder="Masukkan NIS siswa" required className="h-12" />
-                  </div>
-                  <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
-                    💡 Masuk menggunakan NIS siswa. Akun akan otomatis dibuat jika NIS terdaftar.
-                  </p>
-                  <Button type="submit" className="w-full h-12 text-base font-semibold gradient-bg border-0 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all duration-300" disabled={loading}>
-                    {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Masuk sebagai Orang Tua
-                  </Button>
-                </motion.form>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="text-center mt-8 space-y-1">
-            <p className="text-xs text-muted-foreground">© 2026 {school?.name || "TabunganKu"} — Sistem Tabungan Siswa</p>
-            <p className="text-xs text-muted-foreground font-medium">Versi {APP_VERSION}</p>
-          </div>
+          <h1 className="text-xl font-bold text-foreground font-heading">{school?.name || "TabunganKu"}</h1>
+          <p className="text-muted-foreground text-xs mt-1">Sistem Tabungan Siswa Digital</p>
         </motion.div>
+
+        <div className="relative w-full min-h-[560px] lg:min-h-[520px]">
+          {/* Book spine shadow */}
+          <div className="hidden lg:block absolute left-1/2 top-4 bottom-4 w-2 -translate-x-1/2 bg-gradient-to-b from-transparent via-border/60 to-transparent z-20 rounded-full" />
+
+          <div className="relative w-full h-full flex flex-col lg:flex-row">
+            {/* LEFT PAGE - Login Form (always visible on desktop, toggles on mobile) */}
+            <AnimatePresence mode="wait">
+              {!flipped && (
+                <motion.div
+                  key="login-page"
+                  className="w-full lg:w-1/2 lg:block"
+                  initial={{ rotateY: -90, opacity: 0 }}
+                  animate={{ rotateY: 0, opacity: 1 }}
+                  exit={{ rotateY: 90, opacity: 0 }}
+                  transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  style={{ transformOrigin: "right center" }}
+                >
+                  <div className="h-full rounded-2xl lg:rounded-r-none lg:rounded-l-2xl border border-border/40 bg-card/80 backdrop-blur-xl shadow-2xl p-6 md:p-8">
+                    {/* Desktop school logo */}
+                    <div className="hidden lg:flex items-center gap-3 mb-6">
+                      <div className="w-11 h-11 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-primary/25 overflow-hidden">
+                        {school?.logo_url ? (
+                          <img src={school.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                          <PiggyBank className="w-6 h-6 text-primary-foreground" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground text-sm font-heading">{school?.name || "TabunganKu"}</p>
+                        <p className="text-xs text-muted-foreground">Sistem Tabungan Digital</p>
+                      </div>
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-foreground mb-1 font-heading">Selamat Datang 👋</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Masuk untuk mengelola tabungan</p>
+
+                    {/* Role toggle */}
+                    <div className="flex gap-2 mb-6 p-1 bg-secondary/60 rounded-xl">
+                      <Button type="button" variant={loginRole === "admin" ? "default" : "ghost"} className={`flex-1 rounded-lg text-sm transition-all duration-300 ${loginRole === "admin" ? "shadow-md" : ""}`} onClick={() => { setLoginRole("admin"); setIsSignup(false); }}>
+                        Admin
+                      </Button>
+                      <Button type="button" variant={loginRole === "parent" ? "default" : "ghost"} className={`flex-1 rounded-lg text-sm transition-all duration-300 ${loginRole === "parent" ? "shadow-md" : ""}`} onClick={() => { setLoginRole("parent"); setIsSignup(false); }}>
+                        Orang Tua
+                      </Button>
+                    </div>
+
+                    {loginRole === "admin" ? (
+                      <form onSubmit={handleAdminLogin} className="space-y-4">
+                        {isSignup && (
+                          <div className="space-y-1.5">
+                            <Label htmlFor="fullName" className="text-xs">Nama Lengkap</Label>
+                            <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nama lengkap" required className="h-11" />
+                          </div>
+                        )}
+                        <div className="space-y-1.5">
+                          <Label htmlFor="email" className="text-xs">Email</Label>
+                          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@sekolah.id" required className="h-11" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="password" className="text-xs">Password</Label>
+                          <div className="relative">
+                            <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="h-11 pr-11" />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <Button type="submit" className="w-full h-11 text-sm font-semibold gradient-bg border-0 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all duration-300" disabled={loading}>
+                          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          {isSignup ? "Daftar Akun" : "Masuk"}
+                        </Button>
+                        <p className="text-center text-xs text-muted-foreground">
+                          {isSignup ? "Sudah punya akun?" : "Belum punya akun?"}{" "}
+                          <button type="button" onClick={() => setIsSignup(!isSignup)} className="text-primary font-semibold hover:underline">
+                            {isSignup ? "Masuk" : "Daftar"}
+                          </button>
+                        </p>
+                      </form>
+                    ) : (
+                      <form onSubmit={handleParentLogin} className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="nis" className="text-xs">NIS Siswa</Label>
+                          <Input id="nis" value={nis} onChange={(e) => setNis(e.target.value)} placeholder="Masukkan NIS siswa" required className="h-11" />
+                        </div>
+                        <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
+                          💡 Masuk menggunakan NIS siswa. Akun otomatis dibuat jika NIS terdaftar.
+                        </p>
+                        <Button type="submit" className="w-full h-11 text-sm font-semibold gradient-bg border-0 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all duration-300" disabled={loading}>
+                          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Masuk sebagai Orang Tua
+                        </Button>
+                      </form>
+                    )}
+
+                    {/* Flip button - mobile only */}
+                    <button
+                      onClick={() => setFlipped(true)}
+                      className="lg:hidden flex items-center justify-center gap-2 w-full mt-5 py-2.5 text-sm text-primary font-medium hover:bg-secondary/50 rounded-xl transition-colors"
+                    >
+                      Tentang Aplikasi <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* RIGHT PAGE - App Info (always visible on desktop, toggles on mobile) */}
+            <div className="hidden lg:block w-1/2">
+              <InfoPage school={school} features={features} recentChanges={recentChanges} />
+            </div>
+
+            {/* Mobile: Info page when flipped */}
+            <AnimatePresence mode="wait">
+              {flipped && (
+                <motion.div
+                  key="info-page"
+                  className="w-full lg:hidden"
+                  initial={{ rotateY: 90, opacity: 0 }}
+                  animate={{ rotateY: 0, opacity: 1 }}
+                  exit={{ rotateY: -90, opacity: 0 }}
+                  transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  style={{ transformOrigin: "left center" }}
+                >
+                  <InfoPage school={school} features={features} recentChanges={recentChanges} onBack={() => setFlipped(false)} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6 space-y-0.5">
+          <p className="text-xs text-muted-foreground">© 2026 {school?.name || "TabunganKu"} — Sistem Tabungan Siswa</p>
+          <p className="text-xs text-muted-foreground font-medium">Versi {APP_VERSION}</p>
+        </div>
       </div>
     </div>
   );
 };
+
+interface InfoPageProps {
+  school: any;
+  features: { icon: any; title: string; desc: string }[];
+  recentChanges: any[];
+  onBack?: () => void;
+}
+
+const InfoPage = ({ school, features, recentChanges, onBack }: InfoPageProps) => (
+  <div className="h-full rounded-2xl lg:rounded-l-none lg:rounded-r-2xl border border-border/40 lg:border-l-0 bg-card/60 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+    {/* Gradient header */}
+    <div className="gradient-bg p-6 pb-8 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20" />
+      <motion.div
+        className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl"
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ duration: 6, repeat: Infinity }}
+      />
+
+      {onBack && (
+        <button onClick={onBack} className="relative z-10 flex items-center gap-1 text-primary-foreground/80 hover:text-primary-foreground text-sm mb-3 transition-colors">
+          <ChevronLeft className="w-4 h-4" /> Kembali ke Login
+        </button>
+      )}
+
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center overflow-hidden">
+            {school?.logo_url ? (
+              <img src={school.logo_url} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <PiggyBank className="w-5 h-5 text-primary-foreground" />
+            )}
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-primary-foreground font-heading">{school?.name || "TabunganKu"}</h2>
+            {school?.address && <p className="text-xs text-primary-foreground/70">{school.address}</p>}
+          </div>
+        </div>
+        {school?.npsn && <p className="text-xs text-primary-foreground/50 mt-1">NPSN: {school.npsn}</p>}
+      </div>
+    </div>
+
+    <div className="p-6 space-y-5 max-h-[360px] lg:max-h-none overflow-y-auto">
+      {/* Features grid */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 font-heading">Fitur Unggulan</h3>
+        <div className="grid grid-cols-2 gap-2.5">
+          {features.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.05, duration: 0.35 }}
+              className="p-3 rounded-xl bg-secondary/40 border border-border/30 hover:bg-secondary/60 hover:scale-[1.02] transition-all duration-200 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                <f.icon className="w-4 h-4 text-primary" />
+              </div>
+              <p className="font-semibold text-foreground text-xs">{f.title}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{f.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent updates */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-2.5 font-heading">Pembaruan Terbaru</h3>
+        <div className="space-y-2">
+          {recentChanges.map((entry, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 + i * 0.1 }}
+              className="p-3 rounded-xl bg-secondary/30 border border-border/20"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-primary">v{entry.version}</span>
+                <span className="text-[10px] text-muted-foreground">{entry.date}</span>
+              </div>
+              <ul className="space-y-0.5">
+                {entry.changes.slice(0, 2).map((c: string, j: number) => (
+                  <li key={j} className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                    <span className="text-primary mt-0.5">•</span> {c}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export default Login;
