@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
-import { APP_VERSION, CHANGELOG } from "@/lib/appConfig";
+import { APP_VERSION } from "@/lib/appConfig";
 import { useSchoolInfo } from "@/hooks/useSchoolInfo";
 
 const Login = () => {
@@ -94,7 +94,7 @@ const Login = () => {
     { icon: BarChart3, title: "Analitik Dashboard", desc: "Grafik statistik tabungan per bulan" },
   ];
 
-  const recentChanges = CHANGELOG.slice(0, 3);
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 md:p-8 relative overflow-hidden bg-gradient-to-br from-background via-background to-secondary/30">
@@ -232,7 +232,7 @@ const Login = () => {
 
             {/* RIGHT PAGE - App Info (always visible on desktop, toggles on mobile) */}
             <div className="hidden lg:block w-1/2">
-              <InfoPage school={school} features={features} recentChanges={recentChanges} />
+              <InfoPage school={school} features={features} />
             </div>
 
             {/* Mobile: Info page when flipped */}
@@ -247,7 +247,7 @@ const Login = () => {
                   transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
                   style={{ transformOrigin: "left center" }}
                 >
-                  <InfoPage school={school} features={features} recentChanges={recentChanges} onBack={() => setFlipped(false)} />
+                  <InfoPage school={school} features={features} onBack={() => setFlipped(false)} />
                 </motion.div>
               )}
             </AnimatePresence>
