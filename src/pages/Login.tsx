@@ -328,14 +328,56 @@ const InfoPage = ({ school, features, onBack }: InfoPageProps) => (
         </div>
       </div>
 
+      {/* Panduan Login Orang Tua */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 font-heading">📋 Panduan Login Orang Tua</h3>
+        <div className="space-y-2.5">
+          {[
+            { step: 1, text: "Pada halaman login, pilih tab \"Orang Tua\"." },
+            { step: 2, text: "Masukkan NIS (Nomor Induk Siswa) anak Anda pada kolom yang tersedia." },
+            { step: 3, text: "Klik tombol \"Masuk sebagai Orang Tua\"." },
+            { step: 4, text: "Akun akan otomatis dibuat jika NIS sudah terdaftar oleh admin sekolah." },
+          ].map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + i * 0.08 }}
+              className="flex items-start gap-2.5"
+            >
+              <span className="flex-shrink-0 w-6 h-6 rounded-full gradient-bg flex items-center justify-center text-[11px] font-bold text-primary-foreground">
+                {item.step}
+              </span>
+              <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">{item.text}</p>
+            </motion.div>
+          ))}
+        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/15"
+        >
+          <p className="text-[11px] font-semibold text-foreground mb-1.5">Contoh format NIS yang benar:</p>
+          <div className="flex flex-wrap gap-2">
+            {["2026001", "2026042", "2025118"].map((ex) => (
+              <span key={ex} className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-mono font-semibold">{ex}</span>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+            💡 NIS biasanya terdiri dari 7 digit angka. Tanyakan kepada wali kelas atau admin sekolah jika Anda tidak mengetahui NIS anak.
+          </p>
+        </motion.div>
+      </div>
+
       {/* FAQ */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-2.5 font-heading">FAQ — Pertanyaan Umum</h3>
         <div className="space-y-2">
           {[
             { q: "Bagaimana cara login sebagai Admin?", a: "Pilih tab \"Admin\", masukkan email dan password yang sudah didaftarkan. Jika belum punya akun, klik \"Daftar\" untuk membuat akun baru." },
-            { q: "Bagaimana cara login sebagai Orang Tua?", a: "Pilih tab \"Orang Tua\", lalu masukkan NIS siswa. Akun akan otomatis dibuat jika NIS sudah terdaftar oleh admin." },
-            { q: "Apa itu NIS?", a: "NIS (Nomor Induk Siswa) adalah nomor unik yang diberikan oleh sekolah. Hubungi admin jika belum mengetahui NIS anak Anda." },
+            { q: "Apa itu NIS?", a: "NIS (Nomor Induk Siswa) adalah nomor unik yang diberikan oleh sekolah untuk mengidentifikasi setiap siswa. Format umumnya 7 digit angka, contoh: 2026001." },
+            { q: "NIS saya ditolak, apa yang harus dilakukan?", a: "Pastikan NIS yang dimasukkan benar dan sudah didaftarkan oleh admin sekolah. Jika masih gagal, hubungi admin untuk memverifikasi data siswa." },
             { q: "Lupa password admin?", a: "Hubungi administrator sekolah untuk mereset password akun Anda." },
           ].map((item, i) => (
             <motion.details
