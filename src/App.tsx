@@ -18,7 +18,7 @@ import About from "./pages/About";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import RoleSwitcher from "./components/RoleSwitcher";
-import UpdateNotification from "./components/UpdateNotification";
+
 
 const queryClient = new QueryClient();
 
@@ -29,7 +29,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <UpdateNotification />
+          
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><RoleSwitcher /></ProtectedRoute>} />
