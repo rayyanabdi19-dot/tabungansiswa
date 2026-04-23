@@ -267,11 +267,10 @@ const Login = () => {
 interface InfoPageProps {
   school: any;
   features: { icon: any; title: string; desc: string }[];
-  recentChanges: any[];
   onBack?: () => void;
 }
 
-const InfoPage = ({ school, features, recentChanges, onBack }: InfoPageProps) => (
+const InfoPage = ({ school, features, onBack }: InfoPageProps) => (
   <div className="h-full rounded-2xl lg:rounded-l-none lg:rounded-r-2xl border border-border/40 lg:border-l-0 bg-card/60 backdrop-blur-xl shadow-2xl overflow-hidden relative">
     {/* Gradient header */}
     <div className="gradient-bg p-6 pb-8 relative overflow-hidden">
@@ -324,34 +323,6 @@ const InfoPage = ({ school, features, recentChanges, onBack }: InfoPageProps) =>
               </div>
               <p className="font-semibold text-foreground text-xs">{f.title}</p>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent updates */}
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-2.5 font-heading">Pembaruan Terbaru</h3>
-        <div className="space-y-2">
-          {recentChanges.map((entry, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.1 }}
-              className="p-3 rounded-xl bg-secondary/30 border border-border/20"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-primary">v{entry.version}</span>
-                <span className="text-[10px] text-muted-foreground">{entry.date}</span>
-              </div>
-              <ul className="space-y-0.5">
-                {entry.changes.slice(0, 2).map((c: string, j: number) => (
-                  <li key={j} className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                    <span className="text-primary mt-0.5">•</span> {c}
-                  </li>
-                ))}
-              </ul>
             </motion.div>
           ))}
         </div>
