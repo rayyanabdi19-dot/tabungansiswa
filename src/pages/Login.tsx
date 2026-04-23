@@ -138,7 +138,6 @@ const Login = () => {
           <p className="text-lg text-white/80 mb-10 leading-relaxed">
             Sistem tabungan siswa digital yang modern, aman, dan mudah digunakan.
           </p>
-          </p>
           <div className="grid grid-cols-2 gap-4">
             {features.map((f, i) => (
               <motion.div
