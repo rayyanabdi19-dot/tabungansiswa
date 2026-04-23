@@ -383,6 +383,9 @@ const InfoPage = ({ school, features, recentChanges, onBack }: InfoPageProps) =>
           ))}
         </div>
       </div>
+
+      {/* Install PWA CTA */}
+      <InstallPWAButton />
     </div>
   </div>
 );
