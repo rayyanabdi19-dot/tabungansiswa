@@ -10,11 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { APP_VERSION } from "@/lib/appConfig";
+import { useSchoolInfo } from "@/hooks/useSchoolInfo";
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role } = useAuth();
+  const { school } = useSchoolInfo();
   const [showPassword, setShowPassword] = useState(false);
   const [loginRole, setLoginRole] = useState<"admin" | "parent">("admin");
   const [email, setEmail] = useState("");
@@ -114,17 +116,27 @@ const Login = () => {
           transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           <motion.div
-            className="w-20 h-20 rounded-3xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center mb-8 shadow-2xl"
+            className="w-20 h-20 rounded-3xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center mb-8 shadow-2xl overflow-hidden"
             animate={{ y: [-8, 8, -8] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <PiggyBank className="w-11 h-11 text-white" />
+            {school?.logo_url ? (
+              <img src={school.logo_url} alt="Logo Sekolah" className="w-full h-full object-cover" />
+            ) : (
+              <PiggyBank className="w-11 h-11 text-white" />
+            )}
           </motion.div>
-          <h1 className="text-5xl font-extrabold text-white mb-4 leading-tight font-heading">
-            TabunganKu
+          <h1 className="text-5xl font-extrabold text-white mb-2 leading-tight font-heading">
+            {school?.name || "TabunganKu"}
           </h1>
+          {school?.address && (
+            <p className="text-sm text-white/60 mb-1">{school.address}</p>
+          )}
+          {school?.npsn && (
+            <p className="text-xs text-white/50 mb-4">NPSN: {school.npsn}</p>
+          )}
           <p className="text-lg text-white/80 mb-10 leading-relaxed">
-            Sistem tabungan siswa digital yang modern, aman, dan mudah digunakan untuk sekolah Anda.
+            Sistem tabungan siswa digital yang modern, aman, dan mudah digunakan.
           </p>
           <div className="grid grid-cols-2 gap-4">
             {features.map((f, i) => (
@@ -160,14 +172,19 @@ const Login = () => {
           {/* Mobile header */}
           <div className="text-center mb-8 lg:hidden">
             <motion.div
-              className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/30"
+              className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/30 overflow-hidden"
               animate={{ y: [-4, 4, -4] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              <PiggyBank className="w-9 h-9 text-white" />
+              {school?.logo_url ? (
+                <img src={school.logo_url} alt="Logo Sekolah" className="w-full h-full object-cover" />
+              ) : (
+                <PiggyBank className="w-9 h-9 text-white" />
+              )}
             </motion.div>
-            <h1 className="text-2xl font-extrabold text-foreground font-heading">TabunganKu</h1>
+            <h1 className="text-2xl font-extrabold text-foreground font-heading">{school?.name || "TabunganKu"}</h1>
             <p className="text-muted-foreground mt-1 text-sm">Sistem Tabungan Siswa Digital</p>
+            {school?.address && <p className="text-xs text-muted-foreground mt-0.5">{school.address}</p>}
           </div>
 
           <Card className="glass-card border-border/40">
@@ -235,7 +252,7 @@ const Login = () => {
           </Card>
 
           <div className="text-center mt-8 space-y-1">
-            <p className="text-xs text-muted-foreground">© 2026 TabunganKu — Sistem Tabungan Siswa</p>
+            <p className="text-xs text-muted-foreground">© 2026 {school?.name || "TabunganKu"} — Sistem Tabungan Siswa</p>
             <p className="text-xs text-muted-foreground font-medium">Versi {APP_VERSION}</p>
           </div>
         </motion.div>

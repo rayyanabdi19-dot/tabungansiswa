@@ -272,6 +272,18 @@ export type Database = {
     }
     Functions: {
       check_nis_exists: { Args: { _nis: string }; Returns: boolean }
+      get_school_info: {
+        Args: never
+        Returns: {
+          address: string
+          email: string
+          logo_url: string
+          name: string
+          npsn: string
+          phone: string
+          principal: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

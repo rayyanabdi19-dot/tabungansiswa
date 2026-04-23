@@ -10,6 +10,7 @@ import { formatRupiah } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { DashboardSkeleton } from "@/components/GlassSkeleton";
 import PageTransition, { StaggerContainer, StaggerItem } from "@/components/PageTransition";
+import { useSchoolInfo } from "@/hooks/useSchoolInfo";
 
 const carouselSlides = [
   { title: "Menabung Sejak Dini 🐷", description: "Biasakan anak menabung sejak kecil untuk masa depan yang lebih cerah.", bg: "from-primary/20 via-primary/10 to-accent/10" },
@@ -25,6 +26,7 @@ const Dashboard = () => {
   const [recentTx, setRecentTx] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { school } = useSchoolInfo();
 
   const nextSlide = useCallback(() => setCurrentSlide((p) => (p + 1) % carouselSlides.length), []);
   const prevSlide = () => setCurrentSlide((p) => (p - 1 + carouselSlides.length) % carouselSlides.length);
@@ -86,7 +88,15 @@ const Dashboard = () => {
       ) : (
         <PageTransition>
           <div className="mb-6 md:mb-8">
-            <h1 className="text-xl md:text-2xl font-bold font-heading">Dashboard</h1>
+            <div className="flex items-center gap-3 mb-1">
+              {school?.logo_url && (
+                <img src={school.logo_url} alt="Logo Sekolah" className="w-10 h-10 rounded-xl object-cover shadow-sm" />
+              )}
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold font-heading">Dashboard</h1>
+                {school?.name && <p className="text-xs text-muted-foreground">{school.name}</p>}
+              </div>
+            </div>
             <p className="text-muted-foreground text-sm">Selamat datang, Admin 👋</p>
           </div>
 
